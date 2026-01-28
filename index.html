@@ -82,6 +82,21 @@
 </div>
 
 <button class="btn" onclick="openSkyscraper()">Зайти в Крысо-Скреб 🏢</button>
+
+<div class="container" id="park-view" style="display:none;">
+    <div style="background: #2d5a27; padding: 20px; border: 3px solid #8b4513; border-radius: 40px;">
+        <h2>🌳 Городской Парк</h2>
+        <div id="park-content">
+            <div id="pigeon-icon" style="font-size: 50px; transition: 0.3s;">🐦</div>
+            <p id="park-msg">Голуби ждут угощения. Семечки стоят 5 🧀</p>
+            <p>Твоя Репутация: <span id="rep-count" style="color: gold;">0</span> ⭐</p>
+        </div>
+        
+        <button class="btn" onclick="feedBirds()">Купить семечки и покормить (5🧀)</button>
+        <button class="btn" onclick="exitPark()" style="width:100%; margin-top:10px;">Вернуться на площадь</button>
+    </div>
+</div>
+<button class="btn" onclick="openPark()">Пойти в Парк 🌳</button>
 <script>
     let cheeseBalance = 0;
     let gameActive = false;
@@ -178,6 +193,44 @@ function goFloor(num) {
         document.getElementById('floor-content').innerHTML += `<p style="color:red;">Доступ закрыто! Нужно 200🧀</p>`;
     }
                                 }
+    let reputation = 0;
+
+function openPark() {
+    document.getElementById('main-view').style.display = 'none';
+    document.getElementById('park-view').style.display = 'block';
+}
+
+function exitPark() {
+    document.getElementById('park-view').style.display = 'none';
+    document.getElementById('main-view').style.display = 'block';
+}
+
+function feedBirds() {
+    if (cheeseBalance >= 5) {
+        cheeseBalance -= 5;
+        reputation += 1;
+        
+        // Обновляем цифры
+        document.getElementById('balance').innerText = cheeseBalance;
+        document.getElementById('rep-count').innerText = reputation;
+        
+        // Маленькая анимация голубя
+        const pige = document.getElementById('pigeon-icon');
+        pige.style.transform = "scale(1.3) translateY(10px)";
+        document.getElementById('park-msg').innerText = "Курлык! Голубь доволен вашим подгоном.";
+        
+        setTimeout(() => {
+            pige.style.transform = "scale(1)";
+        }, 300);
+
+        // Если репутация высокая, Мэр будет говорить другое
+        if (reputation >= 10) {
+            document.getElementById('mayor-msg').innerText = '"О, я слышал о вас! Вы тот самый благодетель из парка?"';
+        }
+    } else {
+        alert("Сыра маловато для семечек! Иди работай на рынок.");
+    }
+}
 </script>
 
 </body>
