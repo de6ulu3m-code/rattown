@@ -102,6 +102,39 @@
     🚇 Станция "Центральная"
 </button>
 <script>
+    // Функция для сохранения данных
+function saveGame() {
+    localStorage.setItem('ratCheese', cheeseBalance);
+    localStorage.setItem('ratRep', reputation);
+    localStorage.setItem('ratTotalWon', totalWon);
+    localStorage.setItem('ratTotalLost', totalLost);
+}
+
+// Функция для загрузки данных при старте
+function loadGame() {
+    if (localStorage.getItem('ratCheese')) {
+        cheeseBalance = parseInt(localStorage.getItem('ratCheese'));
+        reputation = parseInt(localStorage.getItem('ratRep'));
+        totalWon = parseInt(localStorage.getItem('ratTotalWon'));
+        totalLost = parseInt(localStorage.getItem('ratTotalLost'));
+        
+        // Обновляем цифры на экране
+        updateDisplay();
+    }
+}
+
+function updateDisplay() {
+    document.getElementById('balance').innerText = cheeseBalance;
+    if(document.getElementById('rep-count')) document.getElementById('rep-count').innerText = reputation;
+    if(document.getElementById('total-win')) document.getElementById('total-win').innerText = totalWon;
+    if(document.getElementById('total-loss')) document.getElementById('total-loss').innerText = totalLost;
+}
+
+// Запускаем загрузку сразу при открытии страницы
+window.onload = () => {
+    loadGame();
+    // Тут твой старый код для инициализации (если был)
+};
     let cheeseBalance = 0;
     let gameActive = false;
     let timeLeft = 15;
@@ -167,6 +200,7 @@
         document.getElementById('game-view').style.display = 'none';
         document.getElementById('main-view').style.display = 'block';
         document.getElementById('mayor-msg').innerText = '"Неплохо поработал! Приходи еще, когда отдохнешь."';
+        saveGame();
     }
 
     const floorData = {
@@ -217,6 +251,7 @@ function feedBirds() {
         // Обновляем цифры
         document.getElementById('balance').innerText = cheeseBalance;
         document.getElementById('rep-count').innerText = reputation;
+        saveGame();
         
         // Маленькая анимация голубя
         const pige = document.getElementById('pigeon-icon');
