@@ -262,49 +262,54 @@ function exitCasino() {
     document.getElementById('main-view').style.display = 'block';
 }
 
+let totalWon = 0;
+let totalLost = 0;
+
 function playCasino(choice) {
     if (cheeseBalance < 10) {
         alert("Минимум 10 сыров для игры! Сначала заработай на рынке.");
         return;
     }
 
-    // Снимаем ставку
+    // Ставка сделана
     cheeseBalance -= 10;
+    totalLost += 10; // Считаем как потенциальный проигрыш
     
-    // Генерируем победную позицию
     const winningShell = Math.floor(Math.random() * 3);
     const msg = document.getElementById('casino-msg');
     const shells = document.querySelectorAll('.shell');
 
-    // Анимация "открытия"
+    // Анимация открытия
     shells.forEach((s, index) => {
-        if (index === winningShell) {
-            s.innerText = "✨🌽"; // Золотое зерно
-        } else {
-            s.innerText = "💨"; // Пусто
-        }
+        s.innerText = (index === winningShell) ? "✨🌽" : "💨";
     });
 
     if (choice === winningShell) {
-        let winAmount = 30; // Выигрыш (ставка x3)
+        let winAmount = 30; 
         cheeseBalance += winAmount;
-        msg.innerText = "🎉 ПОБЕДА! Ты выиграл 30 сыров!";
+        totalWon += winAmount;
+        
+        // Корректируем статистику: мы не проиграли те 10, что поставили
+        totalLost -= 10; 
+        
+        msg.innerText = "🎉 ПОБЕДА! +30 сыров!";
         msg.style.color = "#00ff00";
     } else {
         msg.innerText = "😢 Мимо... Попробуй еще раз!";
         msg.style.color = "#ff4444";
     }
 
-    // Обновляем баланс
+    // Обновляем все цифры на экране
     document.getElementById('balance').innerText = cheeseBalance;
+    document.getElementById('total-win').innerText = totalWon;
+    document.getElementById('total-loss').innerText = totalLost;
 
-    // Сбрасываем скорлупки через 1.5 секунды
     setTimeout(() => {
         shells.forEach(s => s.innerText = "🥥");
         msg.style.color = "white";
         msg.innerText = "Угадай, где спрятано золотое зерно!";
     }, 1500);
-}
+               }
 </script>
 
 </body>
