@@ -3,88 +3,133 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Крысо-Град</title>
+    <title>Крысо-Град: Рынок</title>
     <style>
-        :root {
-            --city-gray: #444;
-            --pavement: #222;
-            --gold: #ffcc00;
-        }
+        :root { --gold: #ffcc00; --bg: #222; }
         body {
-            background-color: var(--pavement);
-            color: white;
-            font-family: 'Courier New', monospace;
-            display: flex; flex-direction: column; align-items: center;
-            margin: 0; min-height: 100vh;
+            background-color: var(--bg); color: white;
+            font-family: 'Courier New', monospace; display: flex;
+            flex-direction: column; align-items: center; margin: 0; min-height: 100vh;
         }
         .city-header {
             background: #111; width: 100%; text-align: center;
-            padding: 20px; border-bottom: 3px solid var(--gold);
+            padding: 15px; border-bottom: 3px solid var(--gold);
         }
-        .main-square {
-            margin-top: 30px; text-align: center;
-            background: #333; padding: 30px; border-radius: 15px;
-            border: 4px double #555; width: 90%; max-width: 400px;
+        .container {
+            width: 90%; max-width: 400px; text-align: center; margin-top: 20px;
         }
-        .mayor-office { font-size: 80px; margin-bottom: 10px; }
-        .mayor-rat { font-size: 50px; margin-top: -40px; }
         
-        .district-menu {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
-            margin-top: 20px; width: 90%; max-width: 400px;
+        /* Стили игры */
+        #market-game {
+            background: #333; border: 3px dashed var(--gold);
+            height: 300px; position: relative; overflow: hidden;
+            display: none; cursor: crosshair; margin-top: 10px;
         }
-        .district-card {
-            background: #444; border: 2px solid #666; padding: 15px;
-            border-radius: 10px; text-align: center; cursor: pointer;
-            transition: 0.3s; text-decoration: none; color: white;
+        .falling-item {
+            position: absolute; font-size: 30px; cursor: pointer;
+            user-select: none; transition: top 0.1s linear;
         }
-        .district-card:hover { background: var(--gold); color: black; }
         
-        .passport {
-            background: #2c3e50; border: 1px solid #34495e;
-            padding: 10px; border-radius: 5px; margin-top: 15px;
-            font-size: 0.8rem; display: none;
+        .stat-bar { font-size: 1.2rem; margin: 10px 0; color: var(--gold); }
+        .btn {
+            background: #555; color: white; border: none; padding: 10px 20px;
+            border-radius: 5px; cursor: pointer; margin: 5px;
         }
+        .btn:hover { background: var(--gold); color: black; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
 <div class="city-header">
     <h1>🏙️ КРЫСО-ГРАД</h1>
-    <p>Столица хвостатых и пушистых</p>
+    <div class="stat-bar">Сыр в кармане: <span id="balance">0</span> 🧀</div>
 </div>
 
-<div class="main-square">
-    <div class="mayor-office">🏛️</div>
-    <div class="mayor-rat">🐹👔</div>
-    <h3>Мэрия города</h3>
-    <p id="mayor-speech">"Добро пожаловать, путник! Нашему городу нужны рабочие лапки."</p>
-    
-    <button onclick="getPassport()" style="padding: 10px; cursor: pointer;">Получить паспорт гражданина</button>
-    
-    <div id="passport-box" class="passport">
-        <strong>📇 ПАСПОРТ ГРАЖДАНИНА</strong><br>
-        Статус: Житель города<br>
-        ID: <span id="rat-id"></span>
+<div class="container" id="main-view">
+    <div id="mayor-section">
+        <div style="font-size: 50px;">🐹👔</div>
+        <p id="mayor-msg">"Хочешь заработать? На рынке как раз разгружают телегу с провизией!"</p>
+        <button class="btn" onclick="startMarketGame()">Пойти работать на рынок</button>
     </div>
 </div>
 
-<div class="district-menu">
-    <div class="district-card" onclick="alert('Рынок строится...')">🛒 Рынок</div>
-    <div class="district-card" onclick="alert('Небоскреб в проекте...')">🏢 Скреб</div>
-    <div class="district-card" onclick="alert('Парк засаживается семечками...')">🌳 Парк</div>
-    <a href="https://de6ulu3m-code.github.io/ratpage/" class="district-card">🏠 Домой</a>
+<div class="container" id="game-view" class="hidden" style="display:none;">
+    <h3>Лови еду! Осталось: <span id="timer">15</span>с</h3>
+    <div id="market-game"></div>
+</div>
+
+<div style="margin-top: 30px;">
+    <button class="btn" onclick="location.reload()">Центральная площадь</button>
+    <a href="https://de6ulu3m-code.github.io/ratpage/" class="btn" style="text-decoration:none;">🏠 Домой во дворик</a>
 </div>
 
 <script>
-    function getPassport() {
-        const box = document.getElementById('passport-box');
-        const id = document.getElementById('rat-id');
-        const speech = document.getElementById('mayor-speech');
+    let cheeseBalance = 0;
+    let gameActive = false;
+    let timeLeft = 15;
+
+    function startMarketGame() {
+        document.getElementById('main-view').style.display = 'none';
+        document.getElementById('game-view').style.display = 'block';
+        document.getElementById('market-game').style.display = 'block';
         
-        box.style.display = 'block';
-        id.innerText = 'RAT-' + Math.floor(Math.random() * 9999);
-        speech.innerText = '"Теперь ты официально один из нас! Иди на рынок, заработай немного сыра."';
+        gameActive = true;
+        timeLeft = 15;
+        spawnItems();
+        
+        let timerFunc = setInterval(() => {
+            timeLeft--;
+            document.getElementById('timer').innerText = timeLeft;
+            if (timeLeft <= 0) {
+                clearInterval(timerFunc);
+                endGame();
+            }
+        }, 1000);
+    }
+
+    function spawnItems() {
+        if (!gameActive) return;
+        
+        const gameZone = document.getElementById('market-game');
+        const item = document.createElement('div');
+        const types = ['🧀', '🌾', '🍎', '🥜'];
+        
+        item.className = 'falling-item';
+        item.innerText = types[Math.floor(Math.random() * types.length)];
+        item.style.left = Math.random() * (gameZone.offsetWidth - 30) + 'px';
+        item.style.top = '-40px';
+        
+        gameZone.appendChild(item);
+
+        let fallInterval = setInterval(() => {
+            let top = parseInt(item.style.top);
+            if (top > 300 || !gameActive) {
+                clearInterval(fallInterval);
+                if (item.parentNode) gameZone.removeChild(item);
+            } else {
+                item.style.top = (top + 5) + 'px';
+            }
+        }, 30);
+
+        item.onclick = () => {
+            cheeseBalance += 2; // За каждый пойманный предмет +2 сыра
+            document.getElementById('balance').innerText = cheeseBalance;
+            clearInterval(fallInterval);
+            gameZone.removeChild(item);
+        };
+
+        setTimeout(spawnItems, 600);
+    }
+
+    function endGame() {
+        gameActive = false;
+        alert("Смена окончена! Ты заработал: " + cheeseBalance + " 🧀");
+        document.getElementById('market-game').innerHTML = '';
+        document.getElementById('market-game').style.display = 'none';
+        document.getElementById('game-view').style.display = 'none';
+        document.getElementById('main-view').style.display = 'block';
+        document.getElementById('mayor-msg').innerText = '"Неплохо поработал! Приходи еще, когда отдохнешь."';
     }
 </script>
 
