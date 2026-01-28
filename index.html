@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Крысо-Град</title>
+    <style>
+        :root {
+            --city-gray: #444;
+            --pavement: #222;
+            --gold: #ffcc00;
+        }
+        body {
+            background-color: var(--pavement);
+            color: white;
+            font-family: 'Courier New', monospace;
+            display: flex; flex-direction: column; align-items: center;
+            margin: 0; min-height: 100vh;
+        }
+        .city-header {
+            background: #111; width: 100%; text-align: center;
+            padding: 20px; border-bottom: 3px solid var(--gold);
+        }
+        .main-square {
+            margin-top: 30px; text-align: center;
+            background: #333; padding: 30px; border-radius: 15px;
+            border: 4px double #555; width: 90%; max-width: 400px;
+        }
+        .mayor-office { font-size: 80px; margin-bottom: 10px; }
+        .mayor-rat { font-size: 50px; margin-top: -40px; }
+        
+        .district-menu {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+            margin-top: 20px; width: 90%; max-width: 400px;
+        }
+        .district-card {
+            background: #444; border: 2px solid #666; padding: 15px;
+            border-radius: 10px; text-align: center; cursor: pointer;
+            transition: 0.3s; text-decoration: none; color: white;
+        }
+        .district-card:hover { background: var(--gold); color: black; }
+        
+        .passport {
+            background: #2c3e50; border: 1px solid #34495e;
+            padding: 10px; border-radius: 5px; margin-top: 15px;
+            font-size: 0.8rem; display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="city-header">
+    <h1>🏙️ КРЫСО-ГРАД</h1>
+    <p>Столица хвостатых и пушистых</p>
+</div>
+
+<div class="main-square">
+    <div class="mayor-office">🏛️</div>
+    <div class="mayor-rat">🐹👔</div>
+    <h3>Мэрия города</h3>
+    <p id="mayor-speech">"Добро пожаловать, путник! Нашему городу нужны рабочие лапки."</p>
+    
+    <button onclick="getPassport()" style="padding: 10px; cursor: pointer;">Получить паспорт гражданина</button>
+    
+    <div id="passport-box" class="passport">
+        <strong>📇 ПАСПОРТ ГРАЖДАНИНА</strong><br>
+        Статус: Житель города<br>
+        ID: <span id="rat-id"></span>
+    </div>
+</div>
+
+<div class="district-menu">
+    <div class="district-card" onclick="alert('Рынок строится...')">🛒 Рынок</div>
+    <div class="district-card" onclick="alert('Небоскреб в проекте...')">🏢 Скреб</div>
+    <div class="district-card" onclick="alert('Парк засаживается семечками...')">🌳 Парк</div>
+    <a href="https://de6ulu3m-code.github.io/ratpage/" class="district-card">🏠 Домой</a>
+</div>
+
+<script>
+    function getPassport() {
+        const box = document.getElementById('passport-box');
+        const id = document.getElementById('rat-id');
+        const speech = document.getElementById('mayor-speech');
+        
+        box.style.display = 'block';
+        id.innerText = 'RAT-' + Math.floor(Math.random() * 9999);
+        speech.innerText = '"Теперь ты официально один из нас! Иди на рынок, заработай немного сыра."';
+    }
+</script>
+
+</body>
+</html>
