@@ -51,6 +51,9 @@
         <div style="font-size: 50px;">🐹👔</div>
         <p id="mayor-msg">"Хочешь заработать? На рынке как раз разгружают телегу с провизией!"</p>
         <button class="btn" onclick="startMarketGame()">Пойти работать на рынок</button>
+        <button class="btn" onclick="resetGame()" style="background: #ff4444; color: white; margin-top: 20px; font-size: 0.8rem; border: none;">
+    ⚠️ Сбросить весь прогресс
+        </button>
     </div>
 </div>
 
@@ -101,6 +104,18 @@
 <button class="btn" onclick="window.location.href='/ratmetro/'" style="background: #111; border: 1px solid var(--gold); color: var(--gold);">
     🚇 Станция "Центральная"
 </button>
+
+<div class="container" id="bank-view" style="display:none;">
+    <div style="background: #1e272e; padding: 20px; border: 3px solid #00d2d3; border-radius: 15px;">
+        <h2 style="color: #00d2d3;">🏦 Сырный Сейф</h2>
+        <p>Здесь твой сыр под защитой (и сохраняется в памяти браузера!)</p>
+        
+        <div style="font-size: 40px; margin: 15px;">🔒🧀</div>
+        
+        <button class="btn" onclick="saveGame(); alert('Сыр надежно спрятан в памяти браузера!');" style="background: #00d2d3; color: black;">Запереть сейф (Сохранить)</button>
+        <button class="btn" onclick="exitBank()" style="width:100%; margin-top:10px;">Вернуться на площадь</button>
+    </div>
+</div>
 <script>
     // Функция для сохранения данных
 function saveGame() {
@@ -270,6 +285,23 @@ function feedBirds() {
         alert("Сыра маловато для семечек! Иди работай на рынок.");
     }
 }
+    function resetGame() {
+    // Спрашиваем подтверждение, чтобы не сбросить случайно
+    if (confirm("Вы уверены, что хотите обнулить весь сыр и репутацию? Это действие нельзя отменить!")) {
+        
+        // Очищаем localStorage
+        localStorage.clear(); 
+        
+        // Обнуляем переменные в коде
+        cheeseBalance = 0;
+        reputation = 0;
+        totalWon = 0;
+        totalLost = 0;
+        
+        // Перезагружаем страницу, чтобы всё обновилось
+        location.reload();
+    }
+    }
 </script>
 </body>
 </html>
