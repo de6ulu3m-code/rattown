@@ -64,6 +64,24 @@
     <a href="https://de6ulu3m-code.github.io/ratpage/" class="btn" style="text-decoration:none;">🏠 Домой во дворик</a>
 </div>
 
+<div class="container" id="skyscraper-view" style="display:none;">
+    <div style="background: #111; padding: 20px; border: 2px solid var(--gold); border-radius: 10px;">
+        <h2 id="floor-title">🏢 Холл Скреба</h2>
+        <div id="floor-content">
+            <div style="font-size: 50px;">🛎️🐀</div>
+            <p>Консьерж: "Куда желаете подняться? У нас живут только сливки общества!"</p>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-top: 15px;">
+            <button class="btn" onclick="goFloor(1)">1 эт.</button>
+            <button class="btn" onclick="goFloor(2)">2 эт.</button>
+            <button class="btn" onclick="goFloor(3)">3 эт.</button>
+        </div>
+        <button class="btn" onclick="exitSkyscraper()" style="width:100%; margin-top:10px;">Выйти на улицу</button>
+    </div>
+</div>
+
+<button class="btn" onclick="openSkyscraper()">Зайти в Крысо-Скреб 🏢</button>
 <script>
     let cheeseBalance = 0;
     let gameActive = false;
@@ -131,6 +149,35 @@
         document.getElementById('main-view').style.display = 'block';
         document.getElementById('mayor-msg').innerText = '"Неплохо поработал! Приходи еще, когда отдохнешь."';
     }
+
+    const floorData = {
+    1: { title: "Этаж 1: Кибер-нора", icon: "💻🐀", text: "Здесь живет Хацкер. Он взламывает холодильники людей." },
+    2: { title: "Этаж 2: Студия", icon: "🎨🐀", text: "Художник рисует портрет Моны Лизы из плесени." },
+    3: { title: "Этаж 3: Пентхаус", icon: "👑🐀", text: "Здесь можешь жить ты, когда накопишь 200 сыров!" }
+};
+
+function openSkyscraper() {
+    document.getElementById('main-view').style.display = 'none';
+    document.getElementById('skyscraper-view').style.display = 'block';
+}
+
+function exitSkyscraper() {
+    document.getElementById('skyscraper-view').style.display = 'none';
+    document.getElementById('main-view').style.display = 'block';
+}
+
+function goFloor(num) {
+    const data = floorData[num];
+    document.getElementById('floor-title').innerText = data.title;
+    document.getElementById('floor-content').innerHTML = `
+        <div style="font-size: 50px;">${data.icon}</div>
+        <p>${data.text}</p>
+    `;
+    
+    if(num === 3 && cheeseBalance < 200) {
+        document.getElementById('floor-content').innerHTML += `<p style="color:red;">Доступ закрыто! Нужно 200🧀</p>`;
+    }
+                                }
 </script>
 
 </body>
