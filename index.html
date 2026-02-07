@@ -153,6 +153,7 @@ window.onload = () => {
     let cheeseBalance = 0;
     let gameActive = false;
     let timeLeft = 15;
+    
 
     function startMarketGame() {
         document.getElementById('main-view').style.display = 'none';
@@ -234,19 +235,42 @@ function exitSkyscraper() {
     document.getElementById('main-view').style.display = 'block';
 }
 
+ // Добавь это в начало скрипта к остальным let
+
 function goFloor(num) {
     const data = floorData[num];
+    const content = document.getElementById('floor-content');
     document.getElementById('floor-title').innerText = data.title;
-    document.getElementById('floor-content').innerHTML = `
-        <div style="font-size: 50px;">${data.icon}</div>
-        <p>${data.text}</p>
-    `;
     
-    if(num === 3 && cheeseBalance < 200) {
-        document.getElementById('floor-content').innerHTML += `<p style="color:red;">Доступ закрыто! Нужно 200🧀</p>`;
+    if (num === 3) {
+        if (hasPenthouse) {
+            content.innerHTML = `<div style="font-size: 50px;">🏠🐁</div><p>Добро пожаловать домой! Тут пахнет успехом и дорогим пармезаном.</p>`;
+        } else {
+            content.innerHTML = `
+                <div style="font-size: 50px;">🔒</div>
+                <p>Этот шикарный пентхаус стоит 200 🧀</p>
+                <button class="btn" onclick="buyPenthouse()">Купить квартиру</button>
+            `;
+        }
+    } else {
+        content.innerHTML = `<div style="font-size: 50px;">${data.icon}</div><p>${data.text}</p>`;
     }
-                                }
-    let reputation = 0;
+}
+
+function buyPenthouse() {
+    if (cheeseBalance >= 200) {
+        cheeseBalance -= 200;
+        hasPenthouse = true;
+        saveGame(); // Сохраняем покупку
+        updateDisplay();
+        goFloor(3); // Обновляем вид этажа
+        alert("Поздравляем! Вы стали владельцем элитной недвижимости!");
+    } else {
+        alert("Недостаточно сыра! Нужно 200, а у тебя только " + cheeseBalance);
+    }
+}
+
+let reputation = 0;
 
 function openPark() {
     document.getElementById('main-view').style.display = 'none';
