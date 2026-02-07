@@ -123,9 +123,9 @@ function saveGame() {
     localStorage.setItem('ratRep', reputation);
     localStorage.setItem('ratTotalWon', totalWon);
     localStorage.setItem('ratTotalLost', totalLost);
+    localStorage.setItem('ratPenthouse', hasPenthouse); // Сохраняем статус владения
 }
 
-// Функция для загрузки данных при старте
 function loadGame() {
     if (localStorage.getItem('ratCheese')) {
         cheeseBalance = parseInt(localStorage.getItem('ratCheese'));
@@ -133,11 +133,13 @@ function loadGame() {
         totalWon = parseInt(localStorage.getItem('ratTotalWon'));
         totalLost = parseInt(localStorage.getItem('ratTotalLost'));
         
-        // Обновляем цифры на экране
+        // Загружаем статус пентхауса (превращаем строку обратно в true/false)
+        hasPenthouse = localStorage.getItem('ratPenthouse') === 'true';
+        
         updateDisplay();
     }
 }
-
+    
 function updateDisplay() {
     document.getElementById('balance').innerText = cheeseBalance;
     if(document.getElementById('rep-count')) document.getElementById('rep-count').innerText = reputation;
@@ -235,25 +237,37 @@ function exitSkyscraper() {
     document.getElementById('main-view').style.display = 'block';
 }
 
- // Добавь это в начало скрипта к остальным let
-
 function goFloor(num) {
-    const data = floorData[num];
+    const title = document.getElementById('floor-title');
     const content = document.getElementById('floor-content');
-    document.getElementById('floor-title').innerText = data.title;
     
     if (num === 3) {
+        title.innerText = "Этаж 3: Пентхаус";
         if (hasPenthouse) {
-            content.innerHTML = `<div style="font-size: 50px;">🏠🐁</div><p>Добро пожаловать домой! Тут пахнет успехом и дорогим пармезаном.</p>`;
-        } else {
+            // Если куплено - показываем элитный вид
             content.innerHTML = `
-                <div style="font-size: 50px;">🔒</div>
-                <p>Этот шикарный пентхаус стоит 200 🧀</p>
-                <button class="btn" onclick="buyPenthouse()">Купить квартиру</button>
+                <div style="font-size: 60px;">👑🏢</div>
+                <p style="color: #ffcc00; font-weight: bold;">Вы в своих личных апартаментах!</p>
+                <p>Здесь есть панорамный вид на весь Крысо-Град и огромная головка пармезана.</p>
+                <button class="btn" onclick="alert('Вы вышли на балкон. Город как на ладони!')">Выйти на балкон 🏙️</button>
+            `;
+        } else {
+            // Если не куплено - показываем предложение о покупке
+            content.innerHTML = `
+                <div style="font-size: 60px;">🔒</div>
+                <p>Эти элитные апартаменты пустуют.</p>
+                <p>Стоимость: 200 🧀</p>
+                <button class="btn" onclick="buyPenthouse()" style="background:gold; color:black;">Купить за 200 сыров</button>
             `;
         }
     } else {
-        content.innerHTML = `<div style="font-size: 50px;">${data.icon}</div><p>${data.text}</p>`;
+        // Для 1 и 2 этажа берем данные из floorData, как и раньше
+        const data = floorData[num];
+        title.innerText = data.title;
+        content.innerHTML = `
+            <div style="font-size: 50px;">${data.icon}</div>
+            <p>${data.text}</p>
+        `;
     }
 }
 
@@ -261,12 +275,12 @@ function buyPenthouse() {
     if (cheeseBalance >= 200) {
         cheeseBalance -= 200;
         hasPenthouse = true;
-        saveGame(); // Сохраняем покупку
-        updateDisplay();
-        goFloor(3); // Обновляем вид этажа
-        alert("Поздравляем! Вы стали владельцем элитной недвижимости!");
+        saveGame();   // Сразу сохраняем
+        updateDisplay(); 
+        goFloor(3);   // Обновляем экран, чтобы сразу войти в квартиру
+        alert("Поздравляем! Теперь это ваш дом.");
     } else {
-        alert("Недостаточно сыра! Нужно 200, а у тебя только " + cheeseBalance);
+        alert("У вас только " + cheeseBalance + " 🧀. Нужно 200! Пора на рынок.");
     }
 }
 
