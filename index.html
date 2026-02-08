@@ -4,11 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Крысо-Град: Рынок</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&display=swap" rel="stylesheet">
     <style>
         :root { --gold: #ffcc00; --bg: #222; }
         body {
             background-color: var(--bg); color: white;
-            font-family: 'Courier New', monospace; display: flex;
+            /* Courier New остается, но эмодзи теперь общие */
+            font-family: 'Noto Color Emoji', 'Courier New', monospace; 
+            display: flex;
             flex-direction: column; align-items: center; margin: 0; min-height: 100vh;
         }
         .city-header {
@@ -34,9 +37,15 @@
         .btn {
             background: #555; color: white; border: none; padding: 10px 20px;
             border-radius: 5px; cursor: pointer; margin: 5px;
+            font-family: 'Noto Color Emoji', 'Courier New', monospace;
         }
         .btn:hover { background: var(--gold); color: black; }
         .hidden { display: none; }
+
+        /* Фикс для одинаковых эмодзи внутри кнопок и игры */
+        .falling-item, .btn, h1, #skyscraper-view div, #park-view div {
+            font-family: 'Noto Color Emoji', sans-serif;
+        }
     </style>
 </head>
 <body>
@@ -116,52 +125,52 @@
         <button class="btn" onclick="exitBank()" style="width:100%; margin-top:10px;">Вернуться на площадь</button>
     </div>
 </div>
+
 <script>
-    // Функция для сохранения данных
-function saveGame() {
-    localStorage.setItem('ratCheese', cheeseBalance);
-    localStorage.setItem('ratRep', reputation);
-    localStorage.setItem('ratTotalWon', totalWon);
-    localStorage.setItem('ratTotalLost', totalLost);
-    localStorage.setItem('ratPenthouse', hasPenthouse); // Сохраняем статус владения
-}
-
-function loadGame() {
-    if (localStorage.getItem('ratCheese')) {
-        cheeseBalance = parseInt(localStorage.getItem('ratCheese'));
-        reputation = parseInt(localStorage.getItem('ratRep'));
-        totalWon = parseInt(localStorage.getItem('ratTotalWon'));
-        totalLost = parseInt(localStorage.getItem('ratTotalLost'));
-        
-        // Загружаем статус пентхауса (превращаем строку обратно в true/false)
-        hasPenthouse = localStorage.getItem('ratPenthouse') === 'true';
-        
-        updateDisplay();
-    }
-}
-    
-function updateDisplay() {
-    document.getElementById('balance').innerText = cheeseBalance;
-    if(document.getElementById('rep-count')) document.getElementById('rep-count').innerText = reputation;
-    if(document.getElementById('total-win')) document.getElementById('total-win').innerText = totalWon;
-    if(document.getElementById('total-loss')) document.getElementById('total-loss').innerText = totalLost;
-}
-
-// Запускаем загрузку сразу при открытии страницы
-window.onload = () => {
-    loadGame();
-    // Тут твой старый код для инициализации (если был)
-};
     let cheeseBalance = 0;
+    let reputation = 0; // Добавлена переменная репутации
+    let hasPenthouse = false;
     let gameActive = false;
     let timeLeft = 15;
+
+    function saveGame() {
+        localStorage.setItem('ratCheese', cheeseBalance);
+        localStorage.setItem('ratRep', reputation); // Синхронизация репутации
+        localStorage.setItem('ratPenthouse', hasPenthouse);
+    }
+
+    function loadGame() {
+        if (localStorage.getItem('ratCheese')) {
+            cheeseBalance = parseInt(localStorage.getItem('ratCheese'));
+        }
+        if (localStorage.getItem('ratRep')) {
+            reputation = parseInt(localStorage.getItem('ratRep')); // Загрузка репутации из Норы/Парка
+        }
+        hasPenthouse = localStorage.getItem('ratPenthouse') === 'true';
+        updateDisplay();
+    }
     
+    function updateDisplay() {
+        document.getElementById('balance').innerText = cheeseBalance;
+        if(document.getElementById('rep-count')) document.getElementById('rep-count').innerText = reputation;
+        
+        // Меняем сообщение Мэра, если репутация высокая
+        if (reputation >= 10 && currentView === 'main') {
+            document.getElementById('mayor-msg').innerText = '"О, я слышал о вас! Вы тот самый благодетель?"';
+        }
+    }
+
+    let currentView = 'main';
+
+    window.onload = () => {
+        loadGame();
+    };
 
     function startMarketGame() {
         document.getElementById('main-view').style.display = 'none';
         document.getElementById('game-view').style.display = 'block';
         document.getElementById('market-game').style.display = 'block';
-        
+        currentView = 'game';
         gameActive = true;
         timeLeft = 15;
         spawnItems();
@@ -178,16 +187,13 @@ window.onload = () => {
 
     function spawnItems() {
         if (!gameActive) return;
-        
         const gameZone = document.getElementById('market-game');
         const item = document.createElement('div');
         const types = ['🧀', '🌾', '🍎', '🥜'];
-        
         item.className = 'falling-item';
         item.innerText = types[Math.floor(Math.random() * types.length)];
         item.style.left = Math.random() * (gameZone.offsetWidth - 30) + 'px';
         item.style.top = '-40px';
-        
         gameZone.appendChild(item);
 
         let fallInterval = setInterval(() => {
@@ -201,144 +207,92 @@ window.onload = () => {
         }, 30);
 
         item.onclick = () => {
-            cheeseBalance += 2; // За каждый пойманный предмет +2 сыра
-            document.getElementById('balance').innerText = cheeseBalance;
+            cheeseBalance += 2;
+            updateDisplay();
             clearInterval(fallInterval);
             gameZone.removeChild(item);
         };
-
         setTimeout(spawnItems, 600);
     }
 
     function endGame() {
         gameActive = false;
-        alert("Смена окончена! Ты заработал: " + cheeseBalance + " 🧀");
+        alert("Смена окончена! Твой баланс теперь: " + cheeseBalance + " 🧀");
         document.getElementById('market-game').innerHTML = '';
         document.getElementById('market-game').style.display = 'none';
         document.getElementById('game-view').style.display = 'none';
         document.getElementById('main-view').style.display = 'block';
-        document.getElementById('mayor-msg').innerText = '"Неплохо поработал! Приходи еще, когда отдохнешь."';
+        currentView = 'main';
         saveGame();
     }
 
-    const floorData = {
-    1: { title: "Этаж 1: Кибер-нора", icon: "💻🐀", text: "Здесь живет Хацкер. Он взламывает холодильники людей." },
-    2: { title: "Этаж 2: Студия", icon: "🎨🐀", text: "Художник рисует портрет Моны Лизы из плесени." },
-    3: { title: "Этаж 3: Пентхаус", icon: "👑🐀", text: "Здесь можешь жить ты, когда накопишь 200 сыров!" }
-};
+    function openSkyscraper() {
+        document.getElementById('main-view').style.display = 'none';
+        document.getElementById('skyscraper-view').style.display = 'block';
+    }
 
-function openSkyscraper() {
-    document.getElementById('main-view').style.display = 'none';
-    document.getElementById('skyscraper-view').style.display = 'block';
-}
+    function exitSkyscraper() {
+        document.getElementById('skyscraper-view').style.display = 'none';
+        document.getElementById('main-view').style.display = 'block';
+    }
 
-function exitSkyscraper() {
-    document.getElementById('skyscraper-view').style.display = 'none';
-    document.getElementById('main-view').style.display = 'block';
-}
-
-function goFloor(num) {
-    const title = document.getElementById('floor-title');
-    const content = document.getElementById('floor-content');
-    
-    if (num === 3) {
-        title.innerText = "Этаж 3: Пентхаус";
-        if (hasPenthouse) {
-            // Если куплено - показываем элитный вид
-            content.innerHTML = `
-                <div style="font-size: 60px;">👑🏢</div>
-                <p style="color: #ffcc00; font-weight: bold;">Вы в своих личных апартаментах!</p>
-                <p>Здесь есть панорамный вид на весь Крысо-Град и огромная головка пармезана.</p>
-                <button class="btn" onclick="alert('Вы вышли на балкон. Город как на ладони!')">Выйти на балкон 🏙️</button>
-            `;
+    function goFloor(num) {
+        const title = document.getElementById('floor-title');
+        const content = document.getElementById('floor-content');
+        if (num === 3) {
+            title.innerText = "Этаж 3: Пентхаус";
+            if (hasPenthouse) {
+                content.innerHTML = `
+                    <div style="font-size: 60px;">👑🏢</div>
+                    <p style="color: #ffcc00; font-weight: bold;">Вы в своих личных апартаментах!</p>
+                    <button class="btn" onclick="alert('Вид шикарный!')">Балкон 🏙️</button>`;
+            } else {
+                content.innerHTML = `<div style="font-size: 60px;">🔒</div><p>Стоимость: 200 🧀</p><button class="btn" onclick="buyPenthouse()">Купить</button>`;
+            }
         } else {
-            // Если не куплено - показываем предложение о покупке
-            content.innerHTML = `
-                <div style="font-size: 60px;">🔒</div>
-                <p>Эти элитные апартаменты пустуют.</p>
-                <p>Стоимость: 200 🧀</p>
-                <button class="btn" onclick="buyPenthouse()" style="background:gold; color:black;">Купить за 200 сыров</button>
-            `;
+            const data = { 1: {t: "Кибер-нора", i: "💻🐀"}, 2: {t: "Студия", i: "🎨🐀"} }[num];
+            title.innerText = data.t;
+            content.innerHTML = `<div style="font-size: 50px;">${data.i}</div>`;
         }
-    } else {
-        // Для 1 и 2 этажа берем данные из floorData, как и раньше
-        const data = floorData[num];
-        title.innerText = data.title;
-        content.innerHTML = `
-            <div style="font-size: 50px;">${data.icon}</div>
-            <p>${data.text}</p>
-        `;
     }
-}
 
-function buyPenthouse() {
-    if (cheeseBalance >= 200) {
-        cheeseBalance -= 200;
-        hasPenthouse = true;
-        saveGame();   // Сразу сохраняем
-        updateDisplay(); 
-        goFloor(3);   // Обновляем экран, чтобы сразу войти в квартиру
-        alert("Поздравляем! Теперь это ваш дом.");
-    } else {
-        alert("У вас только " + cheeseBalance + " 🧀. Нужно 200! Пора на рынок.");
+    function buyPenthouse() {
+        if (cheeseBalance >= 200) {
+            cheeseBalance -= 200;
+            hasPenthouse = true;
+            saveGame();
+            updateDisplay();
+            goFloor(3);
+        } else { alert("Мало сыра!"); }
     }
-}
 
-let reputation = 0;
-
-function openPark() {
-    document.getElementById('main-view').style.display = 'none';
-    document.getElementById('park-view').style.display = 'block';
-}
-
-function exitPark() {
-    document.getElementById('park-view').style.display = 'none';
-    document.getElementById('main-view').style.display = 'block';
-}
-
-function feedBirds() {
-    if (cheeseBalance >= 5) {
-        cheeseBalance -= 5;
-        reputation += 1;
-        
-        // Обновляем цифры
-        document.getElementById('balance').innerText = cheeseBalance;
-        document.getElementById('rep-count').innerText = reputation;
-        saveGame();
-        
-        // Маленькая анимация голубя
-        const pige = document.getElementById('pigeon-icon');
-        pige.style.transform = "scale(1.3) translateY(10px)";
-        document.getElementById('park-msg').innerText = "Курлык! Голубь доволен вашим подгоном.";
-        
-        setTimeout(() => {
-            pige.style.transform = "scale(1)";
-        }, 300);
-
-        // Если репутация высокая, Мэр будет говорить другое
-        if (reputation >= 10) {
-            document.getElementById('mayor-msg').innerText = '"О, я слышал о вас! Вы тот самый благодетель из парка?"';
-        }
-    } else {
-        alert("Сыра маловато для семечек! Иди работай на рынок.");
+    function openPark() {
+        document.getElementById('main-view').style.display = 'none';
+        document.getElementById('park-view').style.display = 'block';
+        updateDisplay();
     }
-}
+
+    function exitPark() {
+        document.getElementById('park-view').style.display = 'none';
+        document.getElementById('main-view').style.display = 'block';
+    }
+
+    function feedBirds() {
+        if (cheeseBalance >= 5) {
+            cheeseBalance -= 5;
+            reputation += 1;
+            updateDisplay();
+            saveGame();
+            document.getElementById('pigeon-icon').style.transform = "scale(1.3)";
+            setTimeout(() => document.getElementById('pigeon-icon').style.transform = "scale(1)", 300);
+        } else { alert("Мало сыра!"); }
+    }
+
     function resetGame() {
-    // Спрашиваем подтверждение, чтобы не сбросить случайно
-    if (confirm("Вы уверены, что хотите обнулить весь сыр и репутацию? Это действие нельзя отменить!")) {
-        
-        // Очищаем localStorage
-        localStorage.clear(); 
-        
-        // Обнуляем переменные в коде
-        cheeseBalance = 0;
-        reputation = 0;
-        totalWon = 0;
-        totalLost = 0;
-        
-        // Перезагружаем страницу, чтобы всё обновилось
-        location.reload();
-    }
+        if (confirm("Обнулить прогресс?")) {
+            localStorage.clear();
+            location.reload();
+        }
     }
 </script>
 </body>
