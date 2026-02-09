@@ -51,9 +51,34 @@
         #hospital-view { background: #fdfdfd; color: #c0392b; border-color: var(--hospital); }
 
         .upgrade-card { background: rgba(0,0,0,0.3); padding: 10px; margin: 10px 0; border-radius: 8px; border-left: 4px solid var(--gold); text-align: left; }
+
+        /* МАФИЯ СТИЛИ */
+        #mafia-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 1000; flex-direction: column;
+            align-items: center; justify-content: center; text-align: center;
+        }
+        .mafia-card {
+            background: #333; border: 4px solid #ff4444; padding: 30px; border-radius: 20px;
+            max-width: 320px; box-shadow: 0 0 20px #f00;
+        }
+        .fight-btn { background: #c0392b; font-weight: bold; font-size: 1.1rem; animation: pulse 1s infinite; margin-top: 10px; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.03); } 100% { transform: scale(1); } }
     </style>
 </head>
 <body>
+
+<div id="mafia-overlay">
+    <div class="mafia-card">
+        <div style="font-size: 60px;">🕵️‍♂️🐀🔫</div>
+        <h2 style="color: #ff4444;">КРЫСИНАЯ МАФИЯ</h2>
+        <p id="mafia-msg-text">Они требуют долю за проход!</p>
+        <p id="weight-warning" style="color: #ffa502; font-size: 0.8rem;"></p>
+        <button class="btn" onclick="payMafia()">Отдать долю (30%)</button>
+        <button class="btn fight-btn" onclick="startFight()">БИТЬСЯ ЗА СЫР! 👊</button>
+        <p id="fight-status" style="margin-top: 15px; font-weight: bold; min-height: 24px;"></p>
+    </div>
+</div>
 
 <div class="city-header">
     <h1>🏙️ КРЫСО-ГРАД</h1>
@@ -78,8 +103,8 @@
         </div>
 
         <div style="margin-top: 20px; border-top: 1px solid #444; padding-top: 15px;">
-            <button class="btn" onclick="window.location.href='/ratbar/'" style="background: #5d4037;">🍻 Бар</button>
-            <button class="btn" onclick="window.location.href='/ratmetro/'" style="background: #111; color: var(--gold);">🚇 Метро</button>
+            <button class="btn" onclick="travelTo('/ratbar/')" style="background: #5d4037;">🍻 Бар</button>
+            <button class="btn" onclick="travelTo('/ratmetro/')" style="background: #111; color: var(--gold);">🚇 Метро</button>
             <button class="btn" onclick="saveGame(); alert('Прогресс сохранен!');" style="background: #00d2d3; color: black;">🏦 Сейф</button>
         </div>
 
@@ -90,16 +115,14 @@
 <div class="container" id="stadium-view">
     <h2>🏟️ Крысо-Арена</h2>
     <div style="font-size: 50px;">🏁🏃</div>
-    <p>Здесь проходят крысиные бега!</p>
-    <button class="btn" onclick="trainTail()" style="width:100%;">💪 Тренировать хвост (10 🧀)<br><small>+2 ⭐ Репутации</small></button>
+    <button class="btn" onclick="trainTail()" style="width:100%;">💪 Тренировать хвост (10 🧀)</button>
     <button class="btn" onclick="exitView('stadium-view')" style="width:100%; margin-top:10px;">Назад в город</button>
 </div>
 
 <div class="container" id="hospital-view">
     <h2>🏥 Госпиталь "Зубик"</h2>
     <div style="font-size: 50px;">🚑💊</div>
-    <p>Вылечим любой хвостик!</p>
-    <button class="btn" onclick="buyVitamins()" style="background: #e74c3c; color:white; width:100%;">🍎 Витамины (25 🧀)<br><small>+5 ⭐ Репутации</small></button>
+    <button class="btn" onclick="buyVitamins()" style="background: #e74c3c; color:white; width:100%;">🍎 Витамины (25 🧀)</button>
     <button class="btn" onclick="exitView('hospital-view')" style="width:100%; margin-top:10px;">Выйти</button>
 </div>
 
@@ -157,6 +180,85 @@
     let gameActive = false;
     let timeLeft = 15;
 
+    // --- ЛОГИКА МАФИИ ---
+    function checkMafia() {
+        // Шанс 15%, если сыра больше 50
+        if (Math.random() < 0.15 && cheeseBalance > 50) {
+            showMafia();
+            return true;
+        }
+        return false;
+    }
+
+    function showMafia() {
+        document.getElementById('mafia-overlay').style.display = 'flex';
+        document.getElementById('fight-status').innerText = "";
+        
+        // Показываем штраф от веса сыра (каждые 1000 сыра снижают шанс на 2%)
+        let penalty = Math.floor((cheeseBalance / 1000) * 2);
+        document.getElementById('weight-warning').innerText = 
+            cheeseBalance > 1000 ? "⚠️ Вес сыра снижает шанс победы на " + penalty + "%" : "";
+    }
+
+    function payMafia() {
+        let loss = Math.floor(cheeseBalance * 0.3);
+        cheeseBalance -= loss;
+        alert("Вы откупились! Мафия забрала " + loss + " 🧀 и ушла.");
+        hideMafia();
+    }
+
+    function startFight() {
+        let status = document.getElementById('fight-status');
+        status.innerText = "СРАЖЕНИЕ... 🔥";
+        
+        setTimeout(() => {
+            // ШАНС: База 50% + Бонус репутации - Штраф за вес
+            let weightPenalty = (cheeseBalance / 1000) * 0.02; // -2% за каждую 1000 сыра
+            let repBonus = (reputation / 100) * 0.05; // +5% за каждые 100 репутации
+            
+            let winChance = 0.5 + repBonus - weightPenalty;
+            
+            // Ограничения
+            if (winChance > 0.85) winChance = 0.85;
+            if (winChance < 0.05) winChance = 0.05;
+
+            if (Math.random() < winChance) {
+                cheeseBalance += 200;
+                reputation += 10;
+                alert("👊 ПОБЕДА! Вы раскидали бандитов. В участке вам выдали премию 200 🧀!");
+                hideMafia();
+            } else {
+                cheeseBalance = 0;
+                alert("💀 ПОРАЖЕНИЕ! Сыр был слишком тяжелым... Мафия забрала ВСЁ и побила вас.");
+                hideMafia();
+            }
+        }, 1500);
+    }
+
+    function hideMafia() {
+        document.getElementById('mafia-overlay').style.display = 'none';
+        updateDisplay();
+        saveGame();
+    }
+
+    // --- ОБНОВЛЕННЫЕ ПЕРЕХОДЫ ---
+    function exitView(viewId) {
+        if (!checkMafia()) {
+            document.getElementById(viewId).style.display = 'none';
+            document.getElementById('main-view').style.display = 'block';
+        } else {
+            // Если мафия напала, скрываем старый экран сразу
+            document.getElementById(viewId).style.display = 'none';
+        }
+    }
+
+    function travelTo(url) {
+        if (!checkMafia()) {
+            window.location.href = url;
+        }
+    }
+
+    // --- БАЗОВАЯ ЛОГИКА ---
     function saveGame() {
         localStorage.setItem('ratCheese', cheeseBalance);
         localStorage.setItem('ratRep', reputation);
@@ -193,15 +295,11 @@
         }
     }, 5000);
 
-    function exitView(viewId) {
-        document.getElementById(viewId).style.display = 'none';
-        document.getElementById('main-view').style.display = 'block';
-    }
-
-    // НОВЫЕ ФУНКЦИИ
     function openStadium() {
-        document.getElementById('main-view').style.display = 'none';
-        document.getElementById('stadium-view').style.display = 'block';
+        if (!checkMafia()) {
+            document.getElementById('main-view').style.display = 'none';
+            document.getElementById('stadium-view').style.display = 'block';
+        }
     }
 
     function trainTail() {
@@ -215,37 +313,49 @@
     }
 
     function openHospital() {
-        document.getElementById('main-view').style.display = 'none';
-        document.getElementById('hospital-view').style.display = 'block';
+        if (!checkMafia()) {
+            document.getElementById('main-view').style.display = 'none';
+            document.getElementById('hospital-view').style.display = 'block';
+        }
     }
 
     function buyVitamins() {
         if (cheeseBalance >= 25) {
             cheeseBalance -= 25;
             reputation += 5;
-            alert("Витаминки вкусные! Здоровье в норме, репутация +5 ⭐");
+            alert("Витаминки вкусные! Репутация +5 ⭐");
             updateDisplay();
             saveGame();
-        } else { alert("Не хватает сыра на лечение!"); }
+        } else { alert("Не хватает сыра!"); }
     }
 
-    // ЛОГИКА ИЗ ОРИГИНАЛА
-    function openSewer() { document.getElementById('main-view').style.display = 'none'; document.getElementById('sewer-view').style.display = 'block'; }
+    function openSewer() { if (!checkMafia()) { document.getElementById('main-view').style.display = 'none'; document.getElementById('sewer-view').style.display = 'block'; } }
     function rescueMouse(cost) { if (cheeseBalance >= cost) { cheeseBalance -= cost; reputation += 20; alert("Мыши спасены!"); saveGame(); updateDisplay(); } else { alert("Мало сыра!"); } }
     function openAirport() { if (confirm("Билет стоит 50 🧀. Летим?")) { if (cheeseBalance >= 50) { cheeseBalance -= 50; document.getElementById('main-view').style.display = 'none'; document.getElementById('island-view').style.display = 'block'; updateDisplay(); } else { alert("Нет сыра!"); } } }
     function searchGoldCheese() { let r = Math.random(); if (r > 0.6) { let win = Math.floor(Math.random() * 100) + 50; cheeseBalance += win; alert("Нашел сыр: " + win); } else { alert("Бешеные крысы покусали вас!"); } saveGame(); updateDisplay(); }
-    function openCityHall() { document.getElementById('main-view').style.display = 'none'; document.getElementById('cityhall-view').style.display = 'block'; updateCityHallUI(); }
+    function openCityHall() { if (!checkMafia()) { document.getElementById('main-view').style.display = 'none'; document.getElementById('cityhall-view').style.display = 'block'; updateCityHallUI(); } }
     function updateCityHallUI() { calculateTaxes(); let rank = "Прохожий"; if (reputation > 5) rank = "Местный"; document.getElementById('rank-name').innerText = rank; }
     function upgradeCity(type, cost) { if (cheeseBalance >= cost) { cheeseBalance -= cost; if (type === 'lights') cityLights++; calculateTaxes(); saveGame(); updateCityHallUI(); updateDisplay(); } }
-    function startMarketGame() { document.getElementById('main-view').style.display = 'none'; document.getElementById('game-view').style.display = 'block'; document.getElementById('market-game').style.display = 'block'; gameActive = true; timeLeft = 15; spawnItems(); let timerFunc = setInterval(() => { timeLeft--; document.getElementById('timer').innerText = timeLeft; if (timeLeft <= 0) { clearInterval(timerFunc); endGame(); } }, 1000); }
+    
+    function startMarketGame() { 
+        if (!checkMafia()) {
+            document.getElementById('main-view').style.display = 'none'; 
+            document.getElementById('game-view').style.display = 'block'; 
+            document.getElementById('market-game').style.display = 'block'; 
+            gameActive = true; timeLeft = 15; spawnItems(); 
+            let timerFunc = setInterval(() => { timeLeft--; document.getElementById('timer').innerText = timeLeft; if (timeLeft <= 0) { clearInterval(timerFunc); endGame(); } }, 1000); 
+        }
+    }
+    
     function spawnItems() { if (!gameActive) return; const gameZone = document.getElementById('market-game'); const item = document.createElement('div'); item.className = 'falling-item'; item.innerText = '🧀'; item.style.left = Math.random() * (gameZone.offsetWidth - 30) + 'px'; item.style.top = '-40px'; gameZone.appendChild(item); let fall = setInterval(() => { let top = parseInt(item.style.top); if (top > 300 || !gameActive) { clearInterval(fall); if (item.parentNode) gameZone.removeChild(item); } else { item.style.top = (top + 5) + 'px'; } }, 30); item.onclick = () => { cheeseBalance += 2; updateDisplay(); clearInterval(fall); if (item.parentNode) gameZone.removeChild(item); }; setTimeout(spawnItems, 600); }
     function endGame() { gameActive = false; document.getElementById('market-game').innerHTML = ''; exitView('game-view'); saveGame(); }
-    function openSkyscraper() { document.getElementById('main-view').style.display = 'none'; document.getElementById('skyscraper-view').style.display = 'block'; }
-    function goFloor(num) { if (num === 3) { if (hasPenthouse) document.getElementById('floor-content').innerHTML = "👑 Ваши покои"; else document.getElementById('floor-content').innerHTML = "<button onclick='buyPenthouse()'>Купить за 200</button>"; } }
+    function openSkyscraper() { if (!checkMafia()) { document.getElementById('main-view').style.display = 'none'; document.getElementById('skyscraper-view').style.display = 'block'; } }
+    function goFloor(num) { if (num === 3) { if (hasPenthouse) document.getElementById('floor-content').innerHTML = "👑 Ваши покои"; else document.getElementById('floor-content').innerHTML = "<button class='btn' onclick='buyPenthouse()'>Купить за 200</button>"; } }
     function buyPenthouse() { if (cheeseBalance >= 200) { cheeseBalance -= 200; hasPenthouse = true; saveGame(); updateDisplay(); goFloor(3); } }
-    function openPark() { document.getElementById('main-view').style.display = 'none'; document.getElementById('park-view').style.display = 'block'; }
+    function openPark() { if (!checkMafia()) { document.getElementById('main-view').style.display = 'none'; document.getElementById('park-view').style.display = 'block'; } }
     function feedBirds() { if (cheeseBalance >= 5) { cheeseBalance -= 5; reputation += 1; updateDisplay(); saveGame(); } }
     function resetGame() { if (confirm("Сбросить?")) { localStorage.clear(); location.reload(); } }
+    
     window.onload = loadGame;
 </script>
 </body>
