@@ -50,17 +50,11 @@
         .hidden { display: none !important; }
         .status-badge { font-size: 0.8rem; padding: 4px 12px; border-radius: 10px; margin-top: 5px; display: inline-block; }
         
-        /* СТИЛИ РЫНКА */
         #market-game-zone {
             background: #333; border: 2px dashed var(--gold);
             height: 300px; position: relative; overflow: hidden; margin-top: 10px;
-            cursor: crosshair;
         }
-        .falling-cheese { 
-            position: absolute; font-size: 30px; cursor: pointer; 
-            user-select: none; transition: transform 0.1s;
-        }
-        .falling-cheese:active { transform: scale(1.5); }
+        .falling-cheese { position: absolute; font-size: 30px; cursor: pointer; user-select: none; }
     </style>
 </head>
 <body>
@@ -68,7 +62,7 @@
 <div id="mafia-overlay">
     <div class="mafia-card">
         <div id="mafia-icon" style="font-size: 60px;">🕵️‍♂️</div>
-        <h2 id="mafia-title" style="color: #ff4444;">ЗАСАДА!</h2>
+        <h2 id="mafia-title">ЗАСАДА!</h2>
         <p id="mafia-msg-text"></p>
         <div id="mafia-btns"></div>
         <p id="fight-status" style="margin-top: 15px; font-weight: bold; color: var(--gold);"></p>
@@ -87,11 +81,11 @@
         <button class="btn" onclick="openView('cityhall-view')" style="background: var(--blue);">🏛️ Мэрия</button>
         <button class="btn" id="btn-stadium" onclick="openView('stadium-view')" style="background: var(--stadium);">🏟️ Стадион</button>
         <button class="btn" id="btn-hospital" onclick="openView('hospital-view')" style="background: var(--hospital);">🏥 Больница</button>
-        <button class="btn" id="btn-airport" onclick="openAirport()" style="background: #a29bfe; color: black;">✈️ Аэропорт</button>
+        <button class="btn" id="btn-airport" onclick="openView('airport-view')" style="background: #a29bfe; color: black;">✈️ Аэропорт</button>
         <button class="btn" onclick="openView('sewer-view')" style="background: var(--sewer);">🕳️ Трубы</button>
         
-        <button class="btn hidden" id="btn-rob" onclick="robberyAttempt()" style="background: var(--crimson); grid-column: span 2; font-weight: bold;">🔫 ОГРАБИТЬ ПРОХОЖЕГО</button>
-        <button class="btn hidden" id="btn-leave-mafia" onclick="quitMafiaRequest()" style="background: #444; grid-column: span 2; font-size: 0.75rem;">🚪 Выйти из тёмного общества</button>
+        <button class="btn hidden" id="btn-rob" onclick="robberyAttempt()" style="background: var(--crimson); grid-column: span 2;">🔫 ОГРАБИТЬ ПРОХОЖЕГО</button>
+        <button class="btn hidden" id="btn-leave-mafia" onclick="quitMafiaRequest()" style="background: #444; grid-column: span 2;">🚪 Выйти из мафии</button>
     </div>
     
     <div style="margin-top: 20px; border-top: 1px solid #444; padding-top: 15px;">
@@ -99,15 +93,20 @@
         <button class="btn" onclick="travelToMetro()">🚇 Метро</button>
         <button class="btn" onclick="saveGame(); alert('Сохранено!');" style="background: #00d2d3; color: black;">🏦 Сейф</button>
     </div>
-    <button class="btn" onclick="resetGame()" style="background: #ff4444; margin-top: 20px; font-size: 0.6rem; opacity: 0.5;">СБРОС ИГРЫ</button>
+    <button class="btn" onclick="resetGame()" style="background: #ff4444; margin-top: 10px; font-size: 0.6rem; opacity: 0.5;">СБРОС</button>
 </div>
 
 <div class="container" id="market-view">
-    <h3>🍎 Рынок: Лови сыр!</h3>
-    <p>Кликай на сыр, пока он падает!</p>
+    <h3>🍎 Рынок</h3>
     <div id="market-game-zone"></div>
-    <p style="margin-top:10px;">Осталось времени: <span id="market-timer">15</span>с</p>
-    <button class="btn" onclick="stopMarketGame()" style="width:100%">Закончить раньше</button>
+    <p>Осталось: <span id="market-timer">15</span>с</p>
+</div>
+
+<div class="container" id="airport-view">
+    <h2>✈️ Аэропорт "Крыло"</h2>
+    <p>Билет на Сырные Острова стоит 100 🧀.</p>
+    <button class="btn" onclick="buyFlight()" style="width:100%; background: #a29bfe; color: black;">Купить билет (100 🧀)</button>
+    <button class="btn" onclick="exitView('airport-view')" style="width:100%; margin-top:10px;">Назад</button>
 </div>
 
 <div class="container" id="stadium-view"><h2>🏟️ Арена</h2><button class="btn" onclick="trainTail()">Тренить (10🧀)</button><button class="btn" onclick="exitView('stadium-view')">Назад</button></div>
@@ -120,7 +119,6 @@
     let reputation = 0;
     let isMafia = false;
     let gameActive = false;
-    let marketInterval;
 
     function saveGame() {
         localStorage.setItem('rat_cheese', cheese);
@@ -136,42 +134,103 @@
     }
 
     function updateUI() {
+        if (cheese < 0) cheese = 0; // Страховка от минуса
         document.getElementById('balance').innerText = cheese;
         document.getElementById('rep-display').innerText = reputation;
         const badge = document.getElementById('role-badge');
         
         if(isMafia) {
-            badge.innerText = "🕶️ В ГРУППИРОВКЕ"; badge.style.background = "#800000";
+            badge.innerText = "🕶️ МАФИЯ"; badge.style.background = "#800000";
             document.getElementById('btn-rob').classList.remove('hidden');
             document.getElementById('btn-leave-mafia').classList.remove('hidden');
             document.getElementById('btn-stadium').disabled = true;
             document.getElementById('btn-hospital').disabled = true;
+            document.getElementById('btn-airport').disabled = true;
         } else {
             badge.innerText = "🐹 ГРАЖДАНИН"; badge.style.background = "#444";
             document.getElementById('btn-rob').classList.add('hidden');
             document.getElementById('btn-leave-mafia').classList.add('hidden');
             document.getElementById('btn-stadium').disabled = false;
             document.getElementById('btn-hospital').disabled = false;
+            document.getElementById('btn-airport').disabled = false;
         }
     }
 
-    // --- ЛОГИКА РЫНКА (ИСПРАВЛЕНО) ---
+    // --- ЛОГИКА ПОКУПОК (БЕЗ МИНУСОВ) ---
+    function trainTail() {
+        if(cheese >= 10) { cheese -= 10; reputation += 2; updateUI(); saveGame(); } 
+        else { alert("Недостаточно сыра!"); }
+    }
+
+    function buyVitamins() {
+        if(cheese >= 25) { cheese -= 25; reputation += 5; updateUI(); saveGame(); } 
+        else { alert("Недостаточно сыра!"); }
+    }
+
+    function rescueMouse() {
+        if(cheese >= 100) { cheese -= 100; reputation += 20; updateUI(); saveGame(); } 
+        else { alert("Недостаточно сыра!"); }
+    }
+
+    function buyFlight() {
+        if(cheese >= 100) {
+            cheese -= 100;
+            alert("✈️ Улетаем на Сырные Острова! (Конец демо-версии)");
+            updateUI(); saveGame();
+        } else {
+            alert("У тебя нет 100 🧀 на билет!");
+        }
+    }
+
+    // --- МАФИЯ И ПЕРЕХОДЫ ---
+    function checkMafiaTrigger() {
+        if (isMafia) return false;
+        if (Math.random() < 0.15 && cheese > 50) { showMafiaWindow(); return true; }
+        return false;
+    }
+
+    function showMafiaWindow() {
+        document.getElementById('mafia-overlay').style.display = 'flex';
+        const btns = document.getElementById('mafia-btns');
+        document.getElementById('mafia-msg-text').innerText = "Они хотят твой сыр!";
+        btns.innerHTML = `<button class="btn" onclick="payMafia()">ОТДАТЬ</button><button class="btn" onclick="startFight(false)">БИТЬСЯ!</button>`;
+    }
+
+    function payMafia() {
+        let loss = Math.floor(cheese * 0.3);
+        cheese -= loss;
+        hideMafia();
+    }
+
+    function startFight(isQuitting) {
+        document.getElementById('fight-status').innerText = "БОЙ...";
+        setTimeout(() => {
+            if(Math.random() > 0.5) {
+                if(isQuitting) { isMafia = false; reputation = 0; }
+                else { cheese += 50; }
+                alert("Победа!");
+            } else { cheese = 0; alert("Тебя обобрали!"); }
+            hideMafia();
+        }, 1000);
+    }
+
+    function travelToBar() { if(!checkMafiaTrigger()) window.location.href = "/ratbar/"; }
+    function travelToMetro() { if(!checkMafiaTrigger()) window.location.href = "/ratmetro/"; }
+    function hideMafia() { document.getElementById('mafia-overlay').style.display = 'none'; updateUI(); saveGame(); }
+    function quitMafiaRequest() { document.getElementById('mafia-overlay').style.display = 'flex'; startFight(true); }
+    function robberyAttempt() { if(Math.random()>0.6){ cheese+=50; reputation-=5; } else { reputation-=10; } updateUI(); saveGame(); }
+
+    // --- РЫНОК ---
     function startMarketGame() {
         if(checkMafiaTrigger()) return;
         openView('market-view');
         gameActive = true;
         let timeLeft = 15;
-        document.getElementById('market-timer').innerText = timeLeft;
-        const zone = document.getElementById('market-game-zone');
-        zone.innerHTML = "";
-
-        // Таймер игры
-        marketInterval = setInterval(() => {
+        let timer = setInterval(() => {
             timeLeft--;
             document.getElementById('market-timer').innerText = timeLeft;
-            if(timeLeft <= 0) stopMarketGame();
+            if(timeLeft <= 0 || !gameActive) { clearInterval(timer); gameActive = false; exitView('market-view'); }
         }, 1000);
-
         spawnCheese();
     }
 
@@ -179,104 +238,20 @@
         if(!gameActive) return;
         const zone = document.getElementById('market-game-zone');
         const item = document.createElement('div');
-        item.className = 'falling-cheese';
-        item.innerText = "🧀";
-        item.style.left = Math.random() * 85 + "%";
-        item.style.top = "-40px";
+        item.className = 'falling-cheese'; item.innerText = "🧀";
+        item.style.left = Math.random() * 80 + "%"; item.style.top = "0px";
         zone.appendChild(item);
-
-        let pos = -40;
+        let pos = 0;
         let fall = setInterval(() => {
-            if(!gameActive) { clearInterval(fall); return; }
-            pos += 4; // Скорость падения
-            item.style.top = pos + "px";
-
-            if(pos > 300) {
-                clearInterval(fall);
-                if(item.parentNode) zone.removeChild(item);
-            }
-        }, 30);
-
-        item.onclick = (e) => {
-            e.stopPropagation();
-            cheese += 2;
-            updateUI();
-            clearInterval(fall);
-            if(item.parentNode) zone.removeChild(item);
-        };
-
-        // Частота появления нового сыра
-        setTimeout(spawnCheese, 600);
-    }
-
-    function stopMarketGame() {
-        gameActive = false;
-        clearInterval(marketInterval);
-        saveGame();
-        exitView('market-view');
-    }
-
-    // --- ОСТАЛЬНАЯ ЛОГИКА ---
-    function checkMafiaTrigger() {
-        if (isMafia) return false;
-        if (Math.random() < 0.15 && cheese > 50) {
-            showMafiaWindow();
-            return true;
-        }
-        return false;
-    }
-
-    function showMafiaWindow() {
-        document.getElementById('mafia-overlay').style.display = 'flex';
-        const btns = document.getElementById('mafia-btns');
-        if (reputation < 10) {
-            document.getElementById('mafia-title').innerText = "ВЕРБОВКА";
-            document.getElementById('mafia-msg-text').innerText = "Мафия предлагает тебе долю. Вступишь?";
-            btns.innerHTML = `<button class="btn" onclick="joinMafia()">ВСТУПИТЬ</button><button class="btn" onclick="startFight(false)">ОТКАЗАТЬ</button>`;
-        } else {
-            document.getElementById('mafia-title').innerText = "ЗАСАДА!";
-            document.getElementById('mafia-msg-text').innerText = "Отдавай 30% сыра!";
-            btns.innerHTML = `<button class="btn" onclick="payMafia()">ОТДАТЬ</button><button class="btn" onclick="startFight(false)">БИТЬСЯ!</button>`;
-        }
-    }
-
-    function travelToBar() { if(!checkMafiaTrigger()) window.location.href = "/ratbar/"; }
-    function travelToMetro() { if(!checkMafiaTrigger()) window.location.href = "/ratmetro/"; }
-    
-    function joinMafia() { isMafia = true; hideMafia(); }
-    function payMafia() { cheese -= Math.floor(cheese * 0.3); hideMafia(); }
-    function hideMafia() { document.getElementById('mafia-overlay').style.display = 'none'; updateUI(); saveGame(); }
-
-    function startFight(isQuitting) {
-        document.getElementById('fight-status').innerText = "БОЙ...";
-        setTimeout(() => {
-            if(Math.random() > 0.5) {
-                if(isQuitting) { isMafia = false; reputation = 0; alert("Свободен!"); }
-                else { cheese += 100; alert("Победил!"); }
-            } else { cheese = 0; alert("Проиграл!"); }
-            hideMafia();
-        }, 1000);
-    }
-
-    function quitMafiaRequest() {
-        document.getElementById('mafia-overlay').style.display = 'flex';
-        document.getElementById('mafia-title').innerText = "ВЫХОД";
-        document.getElementById('mafia-msg-text').innerText = "Мафия требует сыр за выход!";
-        document.getElementById('mafia-btns').innerHTML = `<button class="btn" onclick="startFight(true)">ДРАТЬСЯ</button><button class="btn" onclick="hideMafia()">ОСТАТЬСЯ</button>`;
-    }
-
-    function robberyAttempt() {
-        if (Math.random() < 0.6) { cheese += 50; reputation -= 5; alert("+50🧀"); }
-        else { reputation -= 15; alert("Побили! -15⭐"); }
-        updateUI(); saveGame();
+            pos += 5; item.style.top = pos + "px";
+            if(pos > 280) { clearInterval(fall); if(item.parentNode) zone.removeChild(item); }
+        }, 40);
+        item.onclick = () => { cheese += 2; updateUI(); if(item.parentNode) zone.removeChild(item); };
+        setTimeout(spawnCheese, 700);
     }
 
     function openView(id) { document.querySelectorAll('.container').forEach(v => v.style.display = 'none'); document.getElementById(id).style.display = 'block'; }
     function exitView(id) { document.getElementById(id).style.display = 'none'; document.getElementById('main-view').style.display = 'block'; }
-    function trainTail() { if(cheese>=10){ cheese-=10; reputation+=2; updateUI(); } }
-    function buyVitamins() { if(cheese>=25){ cheese-=25; reputation+=5; updateUI(); } }
-    function rescueMouse() { if(cheese>=100){ cheese-=100; reputation+=20; updateUI(); } }
-    function openAirport() { if(confirm("Летим за 50?")){ cheese-=50; alert("Улетел!"); updateUI(); } }
     function resetGame() { localStorage.clear(); location.reload(); }
 
     window.onload = loadGame;
