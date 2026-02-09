@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Крысо-Град: Сити-Менеджер</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&display=swap" rel="stylesheet">
+    <style>
+        :root { --gold: #ffcc00; --bg: #222; --blue: #4a69bd; --sewer: #3d3d3d; --island: #e67e22; }
+        body {
+            background-color: var(--bg); color: white;
+            font-family: 'Noto Color Emoji', 'Courier New', monospace; 
+            display: flex;
+            flex-direction: column; align-items: center; margin: 0; min-height: 100vh;
+        }
+        .city-header {
+            background: #111; width: 100%; text-align: center;
+            padding: 15px; border-bottom: 3px solid var(--gold);
+        }
+        .container {
+            width: 90%; max-width: 400px; text-align: center; margin-top: 20px;
+        }
+        
+        /* Стили рынка */
+        #market-game {
+            background: #333; border: 3px dashed var(--gold);
+            height: 300px; position: relative; overflow: hidden;
+            display: none; cursor: crosshair; margin-top: 10px;
+        }
+        .falling-item {
+            position: absolute; font-size: 30px; cursor: pointer;
+            user-select: none; transition: top 0.1s linear;
+        }
+        
+        .stat-bar { font-size: 1.2rem; margin: 10px 0; color: var(--gold); }
+        .btn {
+            background: #555; color: white; border: none; padding: 10px 20px;
+            border-radius: 5px; cursor: pointer; margin: 5px;
+            font-family: 'Noto Color Emoji', 'Courier New', monospace;
+            transition: 0.2s;
+        }
+        .btn:hover { background: var(--gold); color: black; }
+        
+        /* Стили Мэрии и новых зон */
+        #cityhall-view, #sewer-view, #island-view { display: none; padding: 20px; border: 3px solid var(--gold); border-radius: 15px; }
+        #cityhall-view { background: #2c3e50; }
+        #sewer-view { background: #1a1a1a; border-color: #555; }
+        #island-view { background: #f1c40f; color: black; border-color: var(--island); }
+
+        .upgrade-card { background: rgba(0,0,0,0.3); padding: 10px; margin: 10px 0; border-radius: 8px; border-left: 4px solid var(--gold); text-align: left; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="city-header">
+    <h1>🏙️ КРЫСО-ГРАД</h1>
+    <div class="stat-bar">Сыр в кармане: <span id="balance">0</span> 🧀</div>
+    <div style="font-size: 0.8rem; color: #2ecc71;">Доход: +<span id="tax-val">0</span> 🧀/5с</div>
+</div>
+
+<div class="container" id="main-view">
+    <div id="mayor-section">
+        <div style="font-size: 50px;">🐹👔</div>
+        <p id="mayor-msg">"Город растёт! Помоги жителям или отправься в приключение."</p>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <button class="btn" onclick="startMarketGame()">🍎 На рынок</button>
+            <button class="btn" onclick="openCityHall()" style="background: var(--blue);">🏛️ В Мэрию</button>
+            <button class="btn" onclick="openSkyscraper()">🏢 Небоскреб</button>
+            <button class="btn" onclick="openPark()">🌳 В Парк</button>
+            <button class="btn" onclick="openSewer()" style="background: var(--sewer);">🕳️ Канализация</button>
+            <button class="btn" onclick="openAirport()" style="background: #a29bfe; color: black;">✈️ Аэропорт</button>
+        </div>
+
+        <div style="margin-top: 20px; border-top: 1px solid #444; padding-top: 15px;">
+            <button class="btn" onclick="window.location.href='/ratbar/'" style="background: #5d4037;">🍻 Бар</button>
+            <button class="btn" onclick="window.location.href='/ratmetro/'" style="background: #111; color: var(--gold);">🚇 Метро</button>
+            <button class="btn" onclick="saveGame(); alert('Прогресс сохранен!');" style="background: #00d2d3; color: black;">🏦 Сейф</button>
+        </div>
+
+        <button class="btn" onclick="resetGame()" style="background: #ff4444; margin-top: 30px; font-size: 0.7rem;">⚠️ Сброс</button>
+    </div>
+</div>
+
+<div class="container" id="game-view" style="display:none;">
+    <h3>Лови еду! Осталось: <span id="timer">15</span>с</h3>
+    <div id="market-game"></div>
+</div>
+
+<div class="container" id="cityhall-view">
+    <h2 style="color: var(--gold);">🏛️ Мэрия</h2>
+    <p>Ваш статус: <b id="rank-name">Прохожий</b></p>
+    <div class="upgrade-card">
+        <div>💡 Уличное освещение</div>
+        <small>Доход +1 🧀/5с</small>
+        <button class="btn" onclick="upgradeCity('lights', 50)" style="float:right; padding:5px;">50 🧀</button>
+    </div>
+    <div class="upgrade-card">
+        <div>🛣️ Новые дороги</div>
+        <small>Доход +4 🧀/5с</small>
+        <button class="btn" onclick="upgradeCity('roads', 150)" style="float:right; padding:5px;">150 🧀</button>
+    </div>
+    <button class="btn" onclick="exitView('cityhall-view')" style="width:100%; margin-top:10px;">Назад</button>
+</div>
+
+<div class="container" id="sewer-view">
+    <h2 style="color: #888;">🕳️ Канализация</h2>
+    <div style="font-size: 50px;">🏚️🐁</div>
+    <p>Здесь живут бездомные мыши. Поможешь им обрести дом?</p>
+    <button class="btn" onclick="rescueMouse(100)" style="background: #2ecc71; width:100%;">🏠 Купить им дом (100 🧀)<br><small>+20 к Репутации</small></button>
+    <button class="btn" onclick="exitView('sewer-view')" style="width:100%; margin-top:20px;">Вернуться наверх</button>
+</div>
+
+<div class="container" id="island-view">
+    <h2>🏝️ Бешеный Остров</h2>
+    <div style="font-size: 60px;">🌋🐀💢</div>
+    <p>Берегись! Бешеные крысы могут отобрать твой сыр!</p>
+    <button class="btn" onclick="searchGoldCheese()" style="background: var(--island); color: white; width:100%; font-weight:bold;">Искать Золотой Сыр 🧀✨</button>
+    <button class="btn" onclick="exitView('island-view')" style="width:100%; margin-top:20px; background: #c0392b;">Улететь домой ✈️</button>
+</div>
+
+<div class="container" id="skyscraper-view" style="display:none;">
+    <div style="background: #111; padding: 20px; border: 2px solid var(--gold); border-radius: 10px;">
+        <h2 id="floor-title">🏢 Холл Скреба</h2>
+        <div id="floor-content"><div style="font-size: 50px;">🛎️🐀</div><p>Куда желаете подняться?</p></div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-top: 15px;">
+            <button class="btn" onclick="goFloor(1)">1 эт.</button>
+            <button class="btn" onclick="goFloor(2)">2 эт.</button>
+            <button class="btn" onclick="goFloor(3)">3 эт.</button>
+        </div>
+        <button class="btn" onclick="exitView('skyscraper-view')" style="width:100%; margin-top:10px;">Выйти</button>
+    </div>
+</div>
+
+<div class="container" id="park-view" style="display:none;">
+    <div style="background: #2d5a27; padding: 20px; border: 3px solid #8b4513; border-radius: 40px;">
+        <h2>🌳 Городской Парк</h2>
+        <div id="pigeon-icon" style="font-size: 50px; transition: 0.3s;">🐦</div>
+        <p>Репутация: <span id="rep-count" style="color: gold;">0</span> ⭐</p>
+        <button class="btn" onclick="feedBirds()">Покормить птиц (5🧀)</button>
+        <button class="btn" onclick="exitView('park-view')" style="width:100%; margin-top:10px;">Выйти</button>
+    </div>
+</div>
+
+<script>
+    let cheeseBalance = 0;
+    let reputation = 0;
+    let hasPenthouse = false;
+    let cityLights = 0;
+    let cityRoads = 0;
+    let taxIncome = 0;
+    let gameActive = false;
+    let timeLeft = 15;
+
+    function saveGame() {
+        localStorage.setItem('ratCheese', cheeseBalance);
+        localStorage.setItem('ratRep', reputation);
+        localStorage.setItem('ratPenthouse', hasPenthouse);
+        localStorage.setItem('ratLights', cityLights);
+        localStorage.setItem('ratRoads', cityRoads);
+    }
+
+    function loadGame() {
+        cheeseBalance = parseInt(localStorage.getItem('ratCheese')) || 0;
+        reputation = parseInt(localStorage.getItem('ratRep')) || 0;
+        cityLights = parseInt(localStorage.getItem('ratLights')) || 0;
+        cityRoads = parseInt(localStorage.getItem('ratRoads')) || 0;
+        hasPenthouse = localStorage.getItem('ratPenthouse') === 'true';
+        calculateTaxes();
+        updateDisplay();
+    }
+
+    function updateDisplay() {
+        document.getElementById('balance').innerText = cheeseBalance;
+        document.getElementById('tax-val').innerText = taxIncome;
+        if(document.getElementById('rep-count')) document.getElementById('rep-count').innerText = reputation;
+    }
+
+    function calculateTaxes() {
+        taxIncome = (cityLights * 1) + (cityRoads * 4) + Math.floor(reputation / 10);
+    }
+
+    setInterval(() => {
+        if (taxIncome > 0) {
+            cheeseBalance += taxIncome;
+            updateDisplay();
+        }
+    }, 5000);
+
+    function exitView(viewId) {
+        document.getElementById(viewId).style.display = 'none';
+        document.getElementById('main-view').style.display = 'block';
+    }
+
+    // ЛОГИКА КАНАЛИЗАЦИИ
+    function openSewer() {
+        document.getElementById('main-view').style.display = 'none';
+        document.getElementById('sewer-view').style.display = 'block';
+    }
+
+    function rescueMouse(cost) {
+        if (cheeseBalance >= cost) {
+            cheeseBalance -= cost;
+            reputation += 20;
+            alert("Вы настоящий герой! Мыши переехали в город. Репутация +20!");
+            saveGame();
+            updateDisplay();
+        } else { alert("Мало сыра!"); }
+    }
+
+    // ЛОГИКА АЭРОПОРТА И ОСТРОВА
+    function openAirport() {
+        if (confirm("Билет на Бешеный Остров стоит 50 🧀. Летим?")) {
+            if (cheeseBalance >= 50) {
+                cheeseBalance -= 50;
+                document.getElementById('main-view').style.display = 'none';
+                document.getElementById('island-view').style.display = 'block';
+                updateDisplay();
+            } else { alert("Не хватает на билет!"); }
+        }
+    }
+
+    function searchGoldCheese() {
+        let r = Math.random();
+        if (r > 0.6) {
+            let win = Math.floor(Math.random() * 100) + 50;
+            cheeseBalance += win;
+            alert("✨ Победа! Вы нашли Золотой Сыр и продали его за " + win + " 🧀!");
+        } else if (r > 0.2) {
+            alert("Ничего не нашли, только испачкали лапки.");
+        } else {
+            let loss = Math.floor(cheeseBalance * 0.2);
+            cheeseBalance -= loss;
+            alert("💢 ОЙ! Бешеные крысы отобрали у вас часть припасов (-" + loss + " 🧀)!");
+        }
+        saveGame();
+        updateDisplay();
+    }
+
+    // ОСТАЛЬНАЯ ЛОГИКА (РЫНОК, МЭРИЯ, НЕБОСКРЕБ)
+    function openCityHall() {
+        document.getElementById('main-view').style.display = 'none';
+        document.getElementById('cityhall-view').style.display = 'block';
+        updateCityHallUI();
+    }
+
+    function updateCityHallUI() {
+        calculateTaxes();
+        let rank = "Прохожий";
+        if (reputation > 5) rank = "Местный";
+        if (reputation > 30) rank = "Благодетель";
+        if (hasPenthouse) rank = "Элита Града";
+        document.getElementById('rank-name').innerText = rank;
+    }
+
+    function upgradeCity(type, cost) {
+        if (cheeseBalance >= cost) {
+            cheeseBalance -= cost;
+            if (type === 'lights') cityLights++;
+            if (type === 'roads') cityRoads++;
+            calculateTaxes();
+            saveGame();
+            updateCityHallUI();
+            updateDisplay();
+            alert("Город стал лучше!");
+        } else { alert("Недостаточно сыра!"); }
+    }
+
+    function startMarketGame() {
+        document.getElementById('main-view').style.display = 'none';
+        document.getElementById('game-view').style.display = 'block';
+        document.getElementById('market-game').style.display = 'block';
+        gameActive = true; timeLeft = 15; spawnItems();
+        let timerFunc = setInterval(() => {
+            timeLeft--;
+            document.getElementById('timer').innerText = timeLeft;
+            if (timeLeft <= 0) { clearInterval(timerFunc); endGame(); }
+        }, 1000);
+    }
+
+    function spawnItems() {
+        if (!gameActive) return;
+        const gameZone = document.getElementById('market-game');
+        const item = document.createElement('div');
+        item.className = 'falling-item';
+        item.innerText = ['🧀', '🌾', '🍎', '🥜'][Math.floor(Math.random() * 4)];
+        item.style.left = Math.random() * (gameZone.offsetWidth - 30) + 'px';
+        item.style.top = '-40px';
+        gameZone.appendChild(item);
+        let fall = setInterval(() => {
+            let top = parseInt(item.style.top);
+            if (top > 300 || !gameActive) { clearInterval(fall); if (item.parentNode) gameZone.removeChild(item); }
+            else { item.style.top = (top + 5) + 'px'; }
+        }, 30);
+        item.onclick = () => { cheeseBalance += 2; updateDisplay(); clearInterval(fall); if (item.parentNode) gameZone.removeChild(item); };
+        setTimeout(spawnItems, 600);
+    }
+
+    function endGame() {
+        gameActive = false;
+        document.getElementById('market-game').innerHTML = '';
+        exitView('game-view');
+        saveGame();
+    }
+
+    function openSkyscraper() { document.getElementById('main-view').style.display = 'none'; document.getElementById('skyscraper-view').style.display = 'block'; }
+    function goFloor(num) {
+        const title = document.getElementById('floor-title');
+        const content = document.getElementById('floor-content');
+        if (num === 3) {
+            title.innerText = "Этаж 3: Пентхаус";
+            if (hasPenthouse) content.innerHTML = `<div style="font-size: 60px;">👑</div><p>Ваши покои!</p>`;
+            else content.innerHTML = `<p>Цена: 200 🧀</p><button class="btn" onclick="buyPenthouse()">Купить</button>`;
+        } else {
+            const data = { 1: {t: "Кибер-нора", i: "💻"}, 2: {t: "Студия", i: "🎨"} }[num];
+            title.innerText = data.t; content.innerHTML = `<div style="font-size: 50px;">${data.i}</div>`;
+        }
+    }
+
+    function buyPenthouse() {
+        if (cheeseBalance >= 200) { cheeseBalance -= 200; hasPenthouse = true; saveGame(); updateDisplay(); goFloor(3); }
+        else { alert("Мало сыра!"); }
+    }
+
+    function openPark() { document.getElementById('main-view').style.display = 'none'; document.getElementById('park-view').style.display = 'block'; }
+    function feedBirds() {
+        if (cheeseBalance >= 5) {
+            cheeseBalance -= 5; reputation += 1; updateDisplay(); saveGame();
+            const icon = document.getElementById('pigeon-icon');
+            icon.style.transform = "scale(1.4)"; setTimeout(() => icon.style.transform = "scale(1)", 200);
+        } else { alert("Мало сыра!"); }
+    }
+
+    function resetGame() { if (confirm("Удалить город?")) { localStorage.clear(); location.reload(); } }
+    window.onload = loadGame;
+</script>
+</body>
+      </html>
