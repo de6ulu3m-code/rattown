@@ -452,4 +452,15 @@ function hideMafia() { document.getElementById('mafia-overlay').style.display = 
 function proceedToPending() {
     if (window.pendingLocation) {
         const p = window.pendingLocation;
-        // Просто вызываем
+        // Просто вызываем tryGoTo снова, но мафия уже не сработает (т.к. мы вызвали hideMafia)
+        // Мы передаем те же аргументы, что сохранили
+        tryGoTo(p.target, p.func);
+        window.pendingLocation = null;
+    }
+}
+    
+    function resetGame() { if (confirm("Удалить город?")) { localStorage.clear(); location.reload(); } }
+    window.onload = loadGame;
+</script>
+</body>
+</html>
