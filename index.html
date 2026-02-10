@@ -229,18 +229,19 @@
 
     // ЛОГИКА АЭРОПОРТА И ОСТРОВА
     function openAirport() {
-        if (!confirm("Билет стоит 50 🧀. Летим?") {
-            return false;
+        if (confirm("Билет стоит 50 🧀. Летим?") {
+            if (cheeseBalance < 50) {
+                alert("Недостаточно сыра!");
+                document.getElementById('main-view').style.display = 'block';
+            }
+            else {
+                cheeseBalance -= 50;
+                document.getElementById('main-view').style.display = 'none';
+                document.getElementById('island-view').style.display = 'block';
+                updateDisplay();
+                return true;
+            }
         }
-        if (cheeseBalance < 50) {
-            alert("Недостаточно сыра!");
-            return false;
-        }
-        cheeseBalance -= 50;
-        document.getElementById('main-view').style.display = 'none';
-        document.getElementById('island-view').style.display = 'block';
-        updateDisplay();
-        return true;
     }
 
     function searchGoldCheese() {
@@ -366,35 +367,28 @@
     if (!isMafiaMember && cheeseBalance > 50 && Math.random() < 0.2) {
         window.pendingLocation = { target: target, func: startFunction };
         document.getElementById('mafia-overlay').style.display = 'flex';
-        return; 
+        
+        // Обновляем кнопку вступления
+        const joinBtn = document.getElementById('join-mafia-btn');
+        if (joinBtn) {
+            joinBtn.disabled = (reputation >= 10);
+            joinBtn.innerText = reputation >= 10 ? "Нужна репа < 10" : "🕶️ Вступить в Семью";
+            joinBtn.style.opacity = reputation >= 10 ? "0.3" : "1";
+        }
+        return; // Останавливаемся здесь, ждем выбора в окне мафии
     }
 
-    // 2. ЗАПОМИНАЕМ ТЕКУЩЕЕ СОСТОЯНИЕ
-    const mainView = document.getElementById('main-view');
-    mainView.style.display = 'none';
-
-    // 3. ПЕРЕХОД
+    // 2. ЕСЛИ МАФИИ НЕТ — ПРОСТО ЗАПУСКАЕМ ТВОЙ ПЕРЕХОД
     if (typeof target === 'function') {
-        target(); 
-    } else {
+        target(); // Просто вызываем твою старую функцию (она сама всё откроет)
+    } else if (typeof target === 'string') {
+        // Если передали ID (например, 'cityhall-view')
         document.querySelectorAll('.container').forEach(c => c.style.display = 'none');
+        document.getElementById('main-view').style.display = 'none';
         const el = document.getElementById(target);
         if (el) el.style.display = 'block';
         if (startFunction) startFunction();
     }
-
-    // 4. СТРАХОВКА (Проверка через 100мс)
-    // Если после выполнения функции ни один контейнер не виден — возвращаем меню
-    setTimeout(() => {
-        let anyVisible = false;
-        document.querySelectorAll('.container').forEach(c => {
-            if (c.style.display === 'block' || c.style.display === 'flex') anyVisible = true;
-        });
-        
-        if (!anyVisible) {
-            mainView.style.display = 'block';
-        }
-    }, 100);
     }
     
 // 2. Логика Драки, Откупа и Вступления
