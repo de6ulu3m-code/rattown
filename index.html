@@ -363,39 +363,34 @@
     // 1. ПРОВЕРКА МАФИИ
     if (!isMafiaMember && cheeseBalance > 50 && Math.random() < 0.2) {
         window.pendingLocation = { target: target, func: startFunction };
-        
-        // Показываем окно мафии
         document.getElementById('mafia-overlay').style.display = 'flex';
         
-        // ЛОГИКА КНОПКИ ВСТУПЛЕНИЯ
         const joinBtn = document.getElementById('join-mafia-btn');
         if (joinBtn) {
-            if (reputation >= 10) {
-                joinBtn.disabled = true;
-                joinBtn.style.opacity = "0.3";
-                joinBtn.innerText = "Нужна репа < 10";
-            } else {
-                joinBtn.disabled = false;
-                joinBtn.style.opacity = "1";
-                joinBtn.innerText = "🕶️ Вступить в Семью";
-            }
+            joinBtn.disabled = (reputation >= 10);
+            joinBtn.innerText = reputation >= 10 ? "Нужна репа < 10" : "🕶️ Вступить в Семью";
+            joinBtn.style.opacity = reputation >= 10 ? "0.3" : "1";
         }
         return; 
     }
 
-    // 2. ПЕРЕХОД (если мафии нет)
-    // Скрываем все блоки с классом container
+    // 2. СКРЫВАЕМ ВСЕ ОКНА
+    // Мы прячем всё, что имеет класс container и главное меню
     document.querySelectorAll('.container').forEach(c => c.style.display = 'none');
+    document.getElementById('main-view').style.display = 'none';
 
+    // 3. ПЕРЕХОД
     if (typeof target === 'function') {
-        target(); // Вызываем функцию, если передали её
+        // Если ты передал функцию (например: tryGoTo(openSewer))
+        target(); 
     } else if (typeof target === 'string') {
+        // Если ты передал ID (например: tryGoTo('sewer-view'))
         const targetEl = document.getElementById(target);
         if (targetEl) {
-            targetEl.style.display = 'block'; // Показываем блок по ID
+            targetEl.style.display = 'block';
             if (startFunction) startFunction();
         } else {
-            // Если ID не найден, возвращаемся в меню
+            // Если ID не найден, возвращаем меню, чтобы экран не был пустым
             document.getElementById('main-view').style.display = 'block';
         }
     }
