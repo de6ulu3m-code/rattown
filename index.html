@@ -78,12 +78,12 @@
         <p id="mayor-msg">"Город растёт! Помоги жителям или отправься в приключение."</p>
         
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <button class="btn" onclick="tryToGo(startMarketGame())">🍎 На рынок</button>
-            <button class="btn" onclick="tryToGo(openCityHall())" style="background: var(--blue);">🏛️ В Мэрию</button>
-            <button class="btn" onclick="tryToGo(openSkyscraper())">🏢 Небоскреб</button>
-            <button class="btn" onclick="tryToGo(openPark())">🌳 В Парк</button>
-            <button class="btn" onclick="tryToGo(openSewer())" style="background: var(--sewer);">🕳️ Канализация</button>
-            <button class="btn" onclick="tryToGo(openAirport())" style="background: #a29bfe; color: black;">✈️ Аэропорт</button>
+            <button class="btn" onclick="tryGoTo(startMarketGame())">🍎 На рынок</button>
+            <button class="btn" onclick="tryGoTo(openCityHall())" style="background: var(--blue);">🏛️ В Мэрию</button>
+            <button class="btn" onclick="tryGoTo(openSkyscraper())">🏢 Небоскреб</button>
+            <button class="btn" onclick="tryGoTo(openPark())">🌳 В Парк</button>
+            <button class="btn" onclick="tryGoTo(openSewer())" style="background: var(--sewer);">🕳️ Канализация</button>
+            <button class="btn" onclick="tryGoTo(openAirport())" style="background: #a29bfe; color: black;">✈️ Аэропорт</button>
             <button class="btn" id="exit-mafia-btn" onclick="leaveMafia()" style="display:none; background:#ff4444; color:white; margin-top:10px;">🚪 Выйти из банды (500 🧀)</button>
         </div>
 
