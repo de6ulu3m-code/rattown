@@ -59,18 +59,30 @@
     <div style="font-size: 0.8rem; color: #2ecc71;">Доход: +<span id="tax-val">0</span> 🧀/5с</div>
 </div>
 
+<div id="mafia-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; flex-direction: column; align-items: center; justify-content: center;">
+    <div style="background:#1a1a1a; border:3px solid #ff4444; padding:30px; border-radius:20px; text-align:center; max-width: 300px;">
+        <h2 style="color:#ff4444;">ЗАСАДА! 🔫</h2>
+        <p>Мафия перекрыла путь. Что сделаешь?</p>
+        <button class="btn" onclick="fightMafia()" style="background: #c0392b; font-weight: bold;">👊 Драться (Шанс 50%)</button>
+        <button class="btn" onclick="payMafia()">💰 Отдать долю (30%)</button>
+        <button id="join-mafia-btn" class="btn" onclick="joinMafia()" style="background: #222; border: 1px solid #ff4444;">🕶️ Вступить в Семью</button>
+        <button class="btn" onclick="hideMafia()" style="background: #444; margin-top: 10px;">Убежать</button>
+    </div>
+</div>
+
 <div class="container" id="main-view">
     <div id="mayor-section">
         <div style="font-size: 50px;">🐹👔</div>
         <p id="mayor-msg">"Город растёт! Помоги жителям или отправься в приключение."</p>
         
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <button class="btn" onclick="startMarketGame()">🍎 На рынок</button>
-            <button class="btn" onclick="openCityHall()" style="background: var(--blue);">🏛️ В Мэрию</button>
-            <button class="btn" onclick="openSkyscraper()">🏢 Небоскреб</button>
-            <button class="btn" onclick="openPark()">🌳 В Парк</button>
-            <button class="btn" onclick="openSewer()" style="background: var(--sewer);">🕳️ Канализация</button>
-            <button class="btn" onclick="openAirport()" style="background: #a29bfe; color: black;">✈️ Аэропорт</button>
+            <button class="btn" onclick="tryToGo(startMarketGame())">🍎 На рынок</button>
+            <button class="btn" onclick="tryToGo(openCityHall())" style="background: var(--blue);">🏛️ В Мэрию</button>
+            <button class="btn" onclick="tryToGo(openSkyscraper())">🏢 Небоскреб</button>
+            <button class="btn" onclick="tryToGo(openPark())">🌳 В Парк</button>
+            <button class="btn" onclick="tryToGo(openSewer())" style="background: var(--sewer);">🕳️ Канализация</button>
+            <button class="btn" onclick="tryToGo(openAirport())" style="background: #a29bfe; color: black;">✈️ Аэропорт</button>
+            <button class="btn" id="exit-mafia-btn" onclick="leaveMafia()" style="display:none; background:#ff4444; color:white; margin-top:10px;">🚪 Выйти из банды (500 🧀)</button>
         </div>
 
         <div style="margin-top: 20px; border-top: 1px solid #444; padding-top: 15px;">
@@ -152,6 +164,7 @@
     let taxIncome = 0;
     let gameActive = false;
     let timeLeft = 15;
+    let isMafiaMember = false;
 
     function saveGame() {
         localStorage.setItem('ratCheese', cheeseBalance);
@@ -159,6 +172,8 @@
         localStorage.setItem('ratPenthouse', hasPenthouse);
         localStorage.setItem('ratLights', cityLights);
         localStorage.setItem('ratRoads', cityRoads);
+        localStorage.setItem('ratMafia', isMafiaMember);
+        
     }
 
     function loadGame() {
@@ -167,6 +182,8 @@
         cityLights = parseInt(localStorage.getItem('ratLights')) || 0;
         cityRoads = parseInt(localStorage.getItem('ratRoads')) || 0;
         hasPenthouse = localStorage.getItem('ratPenthouse') === 'true';
+        isMafiaMember = localStorage.getItem('ratMafia') === 'true';
+        updateMafiaStatus();
         calculateTaxes();
         updateDisplay();
     }
@@ -178,7 +195,8 @@
     }
 
     function calculateTaxes() {
-        taxIncome = (cityLights * 1) + (cityRoads * 4) + Math.floor(reputation / 10);
+        let mafiaBonus = isMafiaMember ? 10 : 0;
+        taxIncome = (cityLights * 1) + (cityRoads * 4) + Math.floor(reputation / 10) + mafiaBonus;
     }
 
     setInterval(() => {
@@ -293,7 +311,14 @@
             if (top > 300 || !gameActive) { clearInterval(fall); if (item.parentNode) gameZone.removeChild(item); }
             else { item.style.top = (top + 5) + 'px'; }
         }, 30);
-        item.onclick = () => { cheeseBalance += 2; updateDisplay(); clearInterval(fall); if (item.parentNode) gameZone.removeChild(item); };
+        item.onclick = () => {
+    let loot = isMafiaMember ? 5 : 2; // Воруем 5, если в мафии
+    cheeseBalance += loot;
+    if (isMafiaMember) reputation = Math.max(-100, reputation - 1); // Репа падает при краже
+    updateDisplay();
+    clearInterval(fall);
+    if (item.parentNode) gameZone.removeChild(item);
+};
         setTimeout(spawnItems, 600);
     }
 
@@ -332,6 +357,106 @@
         } else { alert("Мало сыра!"); }
     }
 
+    function tryGoTo(target, startFunction = null) {
+    // 1. Проверка на Мафию
+    if (!isMafiaMember && cheeseBalance > 50 && Math.random() < 0.2) {
+        // Сохраняем цель, чтобы запустить её после разборки с Мафией
+        window.pendingLocation = { target: target, func: startFunction };
+        document.getElementById('mafia-overlay').style.display = 'flex';
+        
+        // Обновляем состояние кнопки вступления
+        const joinBtn = document.getElementById('join-mafia-btn');
+        if (reputation >= 10) {
+            joinBtn.disabled = true;
+            joinBtn.innerText = "Нужна репа < 10";
+            joinBtn.style.opacity = "0.3";
+        } else {
+            joinBtn.disabled = false;
+            joinBtn.innerText = "🕶️ Вступить в Семью";
+            joinBtn.style.opacity = "1";
+        }
+        return; // Останавливаем выполнение, ждем выбора игрока
+    }
+
+    // 2. Если Мафии нет, выполняем переход
+    
+    // Скрываем вообще все окна, чтобы не было наслоения
+    document.querySelectorAll('.container').forEach(c => c.style.display = 'none');
+
+    // Если первый аргумент — это функция (например, tryGoTo(startMarketGame))
+    if (typeof target === 'function') {
+        target();
+    } 
+    // Если первый аргумент — это строка (ID окна), а второй — функция инициализации
+    else {
+        document.getElementById(target).style.display = 'block';
+        if (startFunction) startFunction();
+    }
+        }
+    
+// 2. Логика Драки, Откупа и Вступления
+function fightMafia() {
+    if (Math.random() > 0.5) {
+        reputation += 10;
+        alert("👊 ПОБЕДА! Ты раскидал бандитов. Репутация +10!");
+        hideMafia(); proceedToPending();
+    } else {
+        alert("🤕 ПОРАЖЕНИЕ... Мафия избила тебя и забрала ВЕСЬ сыр!");
+        cheeseBalance = 0; reputation = Math.max(0, reputation - 5);
+        hideMafia(); exitView('main-view');
+    }
+    updateDisplay(); saveGame();
+}
+
+function payMafia() {
+    let loss = Math.floor(cheeseBalance * 0.3);
+    cheeseBalance -= loss;
+    alert("Мафия забрала долю. Проходи...");
+    hideMafia(); proceedToPending();
+    updateDisplay(); saveGame();
+}
+
+function joinMafia() {
+    isMafiaMember = true;
+    reputation = 0;
+    alert("🕶️ Ты теперь в Семье. На рынке можно воровать!");
+    hideMafia(); updateMafiaStatus(); proceedToPending();
+    updateDisplay(); saveGame();
+}
+
+// 3. Выход из банды и обновление кнопок
+function leaveMafia() {
+    if (cheeseBalance >= 500) {
+        cheeseBalance -= 500; isMafiaMember = false; reputation = 5;
+        alert("Ты выплатил 500 сыра и покинул банду!");
+        updateMafiaStatus(); updateDisplay(); saveGame();
+    } else { alert("Нужно 500 🧀, чтобы уйти!"); }
+}
+
+function updateMafiaStatus() {
+    const marketBtn = document.querySelector("button[onclick*='startMarketGame']");
+    const exitBtn = document.getElementById('exit-mafia-btn');
+    if (isMafiaMember) {
+        marketBtn.innerText = "🔫 Ограбить рынок";
+        exitBtn.style.display = "block";
+    } else {
+        marketBtn.innerText = "🍎 На рынок";
+        exitBtn.style.display = "none";
+    }
+}
+
+// 4. Вспомогательные функции (обязательно добавь)
+function hideMafia() { document.getElementById('mafia-overlay').style.display = 'none'; }
+function proceedToPending() {
+    if (window.pendingLocation) {
+        const p = window.pendingLocation;
+        // Просто вызываем tryGoTo снова, но мафия уже не сработает (т.к. мы вызвали hideMafia)
+        // Мы передаем те же аргументы, что сохранили
+        tryGoTo(p.target, p.func);
+        window.pendingLocation = null;
+    }
+}
+    
     function resetGame() { if (confirm("Удалить город?")) { localStorage.clear(); location.reload(); } }
     window.onload = loadGame;
 </script>
