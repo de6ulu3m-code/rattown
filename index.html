@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
+    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+    <script>eruda.init();</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Крысо-Град: Сити-Менеджер</title>
@@ -229,18 +231,13 @@
 
     // ЛОГИКА АЭРОПОРТА И ОСТРОВА
     function openAirport() {
-        if (confirm("Билет стоит 50 🧀. Летим?") {
-            if (cheeseBalance < 50) {
-                alert("Недостаточно сыра!");
-                document.getElementById('main-view').style.display = 'block';
-            }
-            else {
+        if (confirm("Билет на Бешеный Остров стоит 50 🧀. Летим?")) {
+            if (cheeseBalance >= 50) {
                 cheeseBalance -= 50;
                 document.getElementById('main-view').style.display = 'none';
                 document.getElementById('island-view').style.display = 'block';
                 updateDisplay();
-                return true;
-            }
+            } else { alert("Не хватает на билет!"); }
         }
     }
 
@@ -368,26 +365,34 @@
         window.pendingLocation = { target: target, func: startFunction };
         document.getElementById('mafia-overlay').style.display = 'flex';
         
-        // Обновляем кнопку вступления
         const joinBtn = document.getElementById('join-mafia-btn');
         if (joinBtn) {
             joinBtn.disabled = (reputation >= 10);
             joinBtn.innerText = reputation >= 10 ? "Нужна репа < 10" : "🕶️ Вступить в Семью";
             joinBtn.style.opacity = reputation >= 10 ? "0.3" : "1";
         }
-        return; // Останавливаемся здесь, ждем выбора в окне мафии
+        return; 
     }
 
-    // 2. ЕСЛИ МАФИИ НЕТ — ПРОСТО ЗАПУСКАЕМ ТВОЙ ПЕРЕХОД
+    // 2. СКРЫВАЕМ ВСЕ ОКНА
+    // Мы прячем всё, что имеет класс container и главное меню
+    document.querySelectorAll('.container').forEach(c => c.style.display = 'none');
+    document.getElementById('main-view').style.display = 'none';
+
+    // 3. ПЕРЕХОД
     if (typeof target === 'function') {
-        target(); // Просто вызываем твою старую функцию (она сама всё откроет)
+        // Если ты передал функцию (например: tryGoTo(openSewer))
+        target(); 
     } else if (typeof target === 'string') {
-        // Если передали ID (например, 'cityhall-view')
-        document.querySelectorAll('.container').forEach(c => c.style.display = 'none');
-        document.getElementById('main-view').style.display = 'none';
-        const el = document.getElementById(target);
-        if (el) el.style.display = 'block';
-        if (startFunction) startFunction();
+        // Если ты передал ID (например: tryGoTo('sewer-view'))
+        const targetEl = document.getElementById(target);
+        if (targetEl) {
+            targetEl.style.display = 'block';
+            if (startFunction) startFunction();
+        } else {
+            // Если ID не найден, возвращаем меню, чтобы экран не был пустым
+            document.getElementById('main-view').style.display = 'block';
+        }
     }
     }
     
@@ -447,15 +452,4 @@ function hideMafia() { document.getElementById('mafia-overlay').style.display = 
 function proceedToPending() {
     if (window.pendingLocation) {
         const p = window.pendingLocation;
-        // Просто вызываем tryGoTo снова, но мафия уже не сработает (т.к. мы вызвали hideMafia)
-        // Мы передаем те же аргументы, что сохранили
-        tryGoTo(p.target, p.func);
-        window.pendingLocation = null;
-    }
-}
-    
-    function resetGame() { if (confirm("Удалить город?")) { localStorage.clear(); location.reload(); } }
-    window.onload = loadGame;
-</script>
-</body>
-</html>
+        // Просто вызываем
