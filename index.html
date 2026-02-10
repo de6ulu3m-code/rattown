@@ -358,41 +358,46 @@
     }
 
     function tryGoTo(target, startFunction = null) {
-    // 1. Проверка на Мафию
+    // 1. ПРОВЕРКА МАФИИ
     if (!isMafiaMember && cheeseBalance > 50 && Math.random() < 0.2) {
-        // Сохраняем цель, чтобы запустить её после разборки с Мафией
         window.pendingLocation = { target: target, func: startFunction };
+        
+        // Показываем окно мафии
         document.getElementById('mafia-overlay').style.display = 'flex';
         
-        // Обновляем состояние кнопки вступления
+        // ЛОГИКА КНОПКИ ВСТУПЛЕНИЯ
         const joinBtn = document.getElementById('join-mafia-btn');
-        if (reputation >= 10) {
-            joinBtn.disabled = true;
-            joinBtn.innerText = "Нужна репа < 10";
-            joinBtn.style.opacity = "0.3";
-        } else {
-            joinBtn.disabled = false;
-            joinBtn.innerText = "🕶️ Вступить в Семью";
-            joinBtn.style.opacity = "1";
+        if (joinBtn) {
+            if (reputation >= 10) {
+                joinBtn.disabled = true;
+                joinBtn.style.opacity = "0.3";
+                joinBtn.innerText = "Нужна репа < 10";
+            } else {
+                joinBtn.disabled = false;
+                joinBtn.style.opacity = "1";
+                joinBtn.innerText = "🕶️ Вступить в Семью";
+            }
         }
-        return; // Останавливаем выполнение, ждем выбора игрока
+        return; 
     }
 
-    // 2. Если Мафии нет, выполняем переход
-    
-    // Скрываем вообще все окна, чтобы не было наслоения
+    // 2. ПЕРЕХОД (если мафии нет)
+    // Скрываем все блоки с классом container
     document.querySelectorAll('.container').forEach(c => c.style.display = 'none');
 
-    // Если первый аргумент — это функция (например, tryGoTo(startMarketGame))
     if (typeof target === 'function') {
-        target();
-    } 
-    // Если первый аргумент — это строка (ID окна), а второй — функция инициализации
-    else {
-        document.getElementById(target).style.display = 'block';
-        if (startFunction) startFunction();
-    }
+        target(); // Вызываем функцию, если передали её
+    } else if (typeof target === 'string') {
+        const targetEl = document.getElementById(target);
+        if (targetEl) {
+            targetEl.style.display = 'block'; // Показываем блок по ID
+            if (startFunction) startFunction();
+        } else {
+            // Если ID не найден, возвращаемся в меню
+            document.getElementById('main-view').style.display = 'block';
         }
+    }
+    }
     
 // 2. Логика Драки, Откупа и Вступления
 function fightMafia() {
