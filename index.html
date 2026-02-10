@@ -366,40 +366,35 @@
     if (!isMafiaMember && cheeseBalance > 50 && Math.random() < 0.2) {
         window.pendingLocation = { target: target, func: startFunction };
         document.getElementById('mafia-overlay').style.display = 'flex';
-        
-        const joinBtn = document.getElementById('join-mafia-btn');
-        if (joinBtn) {
-            joinBtn.disabled = (reputation >= 10);
-            joinBtn.innerText = reputation >= 10 ? "Нужна репа < 10" : "🕶️ Вступить в Семью";
-            joinBtn.style.opacity = reputation >= 10 ? "0.3" : "1";
-        }
         return; 
     }
 
-    // 2. СКРЫВАЕМ МЕНЮ (подготавливаем переход)
-    document.getElementById('main-view').style.display = 'none';
+    // 2. ЗАПОМИНАЕМ ТЕКУЩЕЕ СОСТОЯНИЕ
+    const mainView = document.getElementById('main-view');
+    mainView.style.display = 'none';
 
-    // 3. ВЫПОЛНЯЕМ ПЕРЕХОД
-    let success = true;
-
+    // 3. ПЕРЕХОД
     if (typeof target === 'function') {
-        // Запускаем функцию и смотрим, что она вернет
-        success = target(); 
-    } else if (typeof target === 'string') {
+        target(); 
+    } else {
+        document.querySelectorAll('.container').forEach(c => c.style.display = 'none');
         const el = document.getElementById(target);
-        if (el) {
-            document.querySelectorAll('.container').forEach(c => c.style.display = 'none');
-            el.style.display = 'block';
-            if (startFunction) startFunction();
-        } else {
-            success = false;
-        }
+        if (el) el.style.display = 'block';
+        if (startFunction) startFunction();
     }
 
-    // 4. ЕСЛИ ОТМЕНА (вернули false) — возвращаем меню!
-    if (success === false) {
-        document.getElementById('main-view').style.display = 'block';
-    }
+    // 4. СТРАХОВКА (Проверка через 100мс)
+    // Если после выполнения функции ни один контейнер не виден — возвращаем меню
+    setTimeout(() => {
+        let anyVisible = false;
+        document.querySelectorAll('.container').forEach(c => {
+            if (c.style.display === 'block' || c.style.display === 'flex') anyVisible = true;
+        });
+        
+        if (!anyVisible) {
+            mainView.style.display = 'block';
+        }
+    }, 100);
     }
     
 // 2. Логика Драки, Откупа и Вступления
